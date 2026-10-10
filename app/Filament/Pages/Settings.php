@@ -48,11 +48,11 @@ class Settings extends Page implements HasForms
         }
     }
 
-    public function form(Form $form): Form
+    public function form(\Filament\Schemas\Schema $form): \Filament\Schemas\Schema
     {
         return $form
             ->schema([
-                \Filament\Forms\Components\Section::make('Informasi Perusahaan')
+                \Filament\Schemas\Components\Section::make('Informasi Perusahaan')
                     ->schema([
                         TextInput::make('company_name')->label('Nama Perusahaan')->required(),
                         Textarea::make('company_address')->label('Alamat Lengkap')->columnSpanFull(),
@@ -61,7 +61,7 @@ class Settings extends Page implements HasForms
                         FileUpload::make('company_logo')->label('Logo')->image()->directory('logos')->columnSpanFull(),
                         Textarea::make('invoice_notes')->label('Catatan Invoice (S&K)')->columnSpanFull(),
                     ])->columns(2),
-                \Filament\Forms\Components\Section::make('Informasi Rekening Pembayaran')
+                \Filament\Schemas\Components\Section::make('Informasi Rekening Pembayaran')
                     ->schema([
                         Repeater::make('bank_accounts')
                             ->label('Daftar Rekening')

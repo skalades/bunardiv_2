@@ -21,13 +21,7 @@
             font-family: 'Inter', sans-serif;
         }
         
-        /* Override filament main bg for this page */
-        main.fi-main { background-color: #0f0f11 !important; }
-        .fi-topbar { background-color: #0f0f11 !important; border-bottom-color: #262626 !important; }
-        .fi-sidebar { background-color: #0f0f11 !important; border-right-color: #262626 !important; }
-        .fi-sidebar-item-active { background-color: rgba(207, 162, 75, 0.1) !important; color: #cfa24b !important; }
-        .fi-header-heading { display: none !important; } /* Hide default Dashboard heading */
-
+        .fi-header-heading { display: none !important; } /* Hide default Dashboard heading to avoid duplicate */
         .font-serif { font-family: 'Playfair Display', serif; }
         
         .c-header { margin-bottom: 32px; }

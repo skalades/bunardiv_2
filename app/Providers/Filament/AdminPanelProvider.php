@@ -17,6 +17,9 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Filament\Support\Enums\Width;
+use Filament\Enums\ThemeMode;
+use Filament\View\PanelsRenderHook;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -32,6 +35,17 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::hex('#cfa24b'),
             ])
             ->brandName('N7 Decoration & CATERING BU NARDI')
+            ->font('Inter')
+            ->serifFont('Playfair Display')
+            ->darkMode(true, isForced: true)
+            ->defaultThemeMode(ThemeMode::Dark)
+            ->maxContentWidth(Width::Full)
+            ->sidebarWidth('17rem')
+            ->sidebarCollapsibleOnDesktop()
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => view('filament.custom-styles'),
+            )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([

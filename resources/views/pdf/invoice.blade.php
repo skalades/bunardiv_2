@@ -35,15 +35,13 @@
         .data-table th { background-color: #8e44ad; color: #ffffff; font-weight: bold; font-size: 12px; text-transform: uppercase; }
         .data-table tbody tr:nth-child(even) { background-color: #fbf8fc; }
         
-        .totals-table { width: 50%; float: right; border-collapse: collapse; margin-bottom: 30px; }
+        .totals-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
         .totals-table td { padding: 8px 10px; border: 1px solid #eee; }
         .totals-label { font-weight: bold; color: #34495e; text-align: right; }
         .totals-value { text-align: right; font-weight: bold; }
         .totals-grand { font-size: 16px; color: #8e44ad; background-color: #fbf8fc; }
         
-        .clearfix::after { content: ""; clear: both; display: table; }
-        
-        .signature-table { width: 100%; margin-top: 20px; clear: both; }
+        .signature-table { width: 100%; margin-top: 20px; }
         .signature-table td { vertical-align: bottom; border: none; padding: 0 15px; }
         .signature-title { margin-bottom: 70px; font-weight: bold; font-size: 13px; color: #2c3e50; }
         .signature-line { border-bottom: 1px solid #333; margin-bottom: 5px; width: 200px; }
@@ -95,10 +93,11 @@
                     <div class="info-row"><span class="info-label">Tgl Acara</span><span class="info-value">: {{ \Carbon\Carbon::parse($order->tanggal)->format('d F Y') }}</span></div>
                     <div class="info-row"><span class="info-label">Status Bayar</span><span class="info-value">: 
                         @php
+                            $totalPaid = $order->payments ? $order->payments->sum('amount_paid') : 0;
                             $statusLabel = 'Belum Lunas';
                             $statusClass = 'status-belum';
-                            if($order->status_pembayaran == 'lunas') { $statusLabel = 'Lunas'; $statusClass = 'status-lunas'; }
-                            if($order->status_pembayaran == 'dp') { $statusLabel = 'DP / Sebagian'; $statusClass = 'status-dp'; }
+                            if($totalPaid > 0 && $totalPaid < $order->total) { $statusLabel = 'DP / Sebagian'; $statusClass = 'status-dp'; }
+                            elseif($totalPaid >= $order->total && $order->total > 0) { $statusLabel = 'Lunas'; $statusClass = 'status-lunas'; }
                         @endphp
                         <span class="status-badge {{ $statusClass }}">{{ $statusLabel }}</span>
                     </span></div>
@@ -135,28 +134,48 @@
         </tbody>
     </table>
 
-    <div class="clearfix">
-        <table class="totals-table">
-            <tr>
-                <td class="totals-label">Subtotal</td>
-                <td class="totals-value">Rp {{ number_format($order->total_harga, 0, ',', '.') }}</td>
-            </tr>
-            @php
-                $totalPaid = $order->payments->sum('amount_paid');
-                $remaining = $order->total_harga - $totalPaid;
-            @endphp
-            @if($totalPaid > 0)
-            <tr>
-                <td class="totals-label">Telah Dibayar</td>
-                <td class="totals-value" style="color: #27ae60;">(Rp {{ number_format($totalPaid, 0, ',', '.') }})</td>
-            </tr>
-            @endif
-            <tr class="totals-grand">
-                <td class="totals-label">Sisa Tagihan</td>
-                <td class="totals-value">Rp {{ number_format($remaining > 0 ? $remaining : 0, 0, ',', '.') }}</td>
-            </tr>
-        </table>
-    </div>
+    <table style="width: 100%;">
+        <tr>
+            <td style="width: 50%;"></td>
+            <td style="width: 50%;">
+                <table class="totals-table">
+                    <tr>
+                        <td class="totals-label">Subtotal</td>
+                        <td class="totals-value">Rp {{ number_format($order->subtotal, 0, ',', '.') }}</td>
+                    </tr>
+                    @if($order->diskon > 0)
+                    <tr>
+                        <td class="totals-label">Diskon</td>
+                        <td class="totals-value" style="color: #c0392b;">(Rp {{ number_format($order->diskon, 0, ',', '.') }})</td>
+                    </tr>
+                    @endif
+                    @if($order->biaya_tambahan > 0)
+                    <tr>
+                        <td class="totals-label">Biaya Lainnya</td>
+                        <td class="totals-value">Rp {{ number_format($order->biaya_tambahan, 0, ',', '.') }}</td>
+                    </tr>
+                    @endif
+                    <tr>
+                        <td class="totals-label">Total Tagihan</td>
+                        <td class="totals-value">Rp {{ number_format($order->total, 0, ',', '.') }}</td>
+                    </tr>
+                    @php
+                        $remaining = $order->total - $totalPaid;
+                    @endphp
+                    @if($totalPaid > 0)
+                    <tr>
+                        <td class="totals-label">Telah Dibayar</td>
+                        <td class="totals-value" style="color: #27ae60;">(Rp {{ number_format($totalPaid, 0, ',', '.') }})</td>
+                    </tr>
+                    @endif
+                    <tr class="totals-grand">
+                        <td class="totals-label">Sisa Tagihan</td>
+                        <td class="totals-value">Rp {{ number_format($remaining > 0 ? $remaining : 0, 0, ',', '.') }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 
     <table class="signature-table">
         <tr>
