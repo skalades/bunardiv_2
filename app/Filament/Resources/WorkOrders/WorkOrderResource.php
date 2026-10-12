@@ -18,6 +18,11 @@ class WorkOrderResource extends Resource
 {
     protected static ?string $model = WorkOrder::class;
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
     public static function getNavigationGroup(): ?string
     {
         return 'Logistics & Operations';

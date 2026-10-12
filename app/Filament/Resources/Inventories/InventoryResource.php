@@ -18,6 +18,11 @@ class InventoryResource extends Resource
 {
     protected static ?string $model = Inventory::class;
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'nama';

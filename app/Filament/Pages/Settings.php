@@ -18,6 +18,11 @@ class Settings extends Page implements HasForms
 {
     use InteractsWithForms;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
     public static function getNavigationIcon(): string
     {
         return 'heroicon-o-cog-6-tooth';

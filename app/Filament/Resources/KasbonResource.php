@@ -27,6 +27,11 @@ class KasbonResource extends Resource
 {
     protected static ?string $model = EmployeeLoan::class;
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
     public static function getNavigationIcon(): string
     {
         return 'heroicon-o-banknotes';

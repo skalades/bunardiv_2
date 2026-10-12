@@ -15,7 +15,7 @@ class CrewDashboardWidget extends Widget
 
     public static function canView(): bool
     {
-        return auth()->user()?->role === 'crew' || auth()->user()?->employeeProfile !== null;
+        return auth()->user()?->role === 'crew';
     }
 
     public function checkInEvent(int $assignmentId): void
@@ -95,14 +95,36 @@ class CrewDashboardWidget extends Widget
             ->join('work_orders', 'work_orders.id', '=', 'work_order_users.work_order_id')
             ->select('work_order_users.*')
             ->orderBy('work_orders.tanggal_persiapan', 'desc')
-            ->take(5)
+            ->take(10)
             ->get();
 
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+
+        $eventHadirBulanIni = WorkOrderUser::where('work_order_users.user_id', $user?->id)
+            ->where('work_order_users.hadir', true)
+            ->join('work_orders', 'work_orders.id', '=', 'work_order_users.work_order_id')
+            ->whereBetween('work_orders.tanggal_persiapan', [$startOfMonth, $endOfMonth])
+            ->count();
+
+        $hariHadirBulanIni = Attendance::where('user_id', $user?->id)
+            ->where('status', 'hadir')
+            ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
+            ->count();
+
+        $kasbonAktif = \App\Models\EmployeeLoan::where('user_id', $user?->id)
+            ->where('status', 'disetujui')
+            ->where('sisa_hutang', '>', 0)
+            ->sum('sisa_hutang');
+
         return [
-            'user'            => $user,
-            'profile'         => $profile,
-            'todayAttendance' => $todayAttendance,
-            'assignments'     => $assignments,
+            'user'               => $user,
+            'profile'            => $profile,
+            'todayAttendance'    => $todayAttendance,
+            'assignments'        => $assignments,
+            'eventHadirBulanIni' => $eventHadirBulanIni,
+            'hariHadirBulanIni'  => $hariHadirBulanIni,
+            'kasbonAktif'        => $kasbonAktif,
         ];
     }
 }

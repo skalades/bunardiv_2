@@ -115,7 +115,7 @@
         @endif
 
         <!-- Section 2: Penugasan Acara & SPK Lapangan (Self-Absensi Event) -->
-        <div style="background: #15161d; border: 1px solid #20232e; border-radius: 16px; padding: 24px;">
+        <div id="tugas" style="background: #15161d; border: 1px solid #20232e; border-radius: 16px; padding: 24px;">
             <div style="margin-bottom: 20px;">
                 <h3 style="font-size: 18px; font-weight: 700; color: #f1f5f9; margin: 0; display: flex; align-items: center; gap: 10px;">
                     <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #cfa24b;"></span>

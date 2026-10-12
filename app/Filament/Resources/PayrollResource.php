@@ -24,6 +24,11 @@ class PayrollResource extends Resource
 {
     protected static ?string $model = Payroll::class;
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
     public static function getNavigationIcon(): string
     {
         return 'heroicon-o-currency-dollar';

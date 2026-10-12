@@ -27,6 +27,11 @@ class KaryawanResource extends Resource
 {
     protected static ?string $model = User::class;
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
     public static function getNavigationIcon(): string
     {
         return 'heroicon-o-user-group';

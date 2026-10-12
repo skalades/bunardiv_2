@@ -20,6 +20,12 @@ use Illuminate\Support\Facades\DB;
 class TagihanResource extends Resource
 {
     protected static ?string $model = Order::class;
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
     public static function getNavigationIcon(): string
     {
         return 'heroicon-o-banknotes';
