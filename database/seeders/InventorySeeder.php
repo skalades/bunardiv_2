@@ -33,15 +33,28 @@ class InventorySeeder extends Seeder
             ['kategori' => 'Mebel', 'nama' => 'Meja Bulat (Round Table)', 'satuan' => 'unit', 'stok_aktual' => 25],
             ['kategori' => 'Mebel', 'nama' => 'Meja Kotak (IBM)', 'satuan' => 'unit', 'stok_aktual' => 30],
             ['kategori' => 'Mebel', 'nama' => 'Kursi Futura', 'satuan' => 'unit', 'stok_aktual' => 300],
+            ['kategori' => 'Mebel', 'nama' => 'Kursi Tiffany (Gold)', 'satuan' => 'unit', 'stok_aktual' => 150],
+            ['kategori' => 'Mebel', 'nama' => 'Kursi Tiffany (Putih)', 'satuan' => 'unit', 'stok_aktual' => 150],
             ['kategori' => 'Dekorasi', 'nama' => 'Cover Kursi Futura (Putih)', 'satuan' => 'pcs', 'stok_aktual' => 300],
             ['kategori' => 'Dekorasi', 'nama' => 'Pita Kursi (Gold)', 'satuan' => 'pcs', 'stok_aktual' => 300],
             ['kategori' => 'Dekorasi', 'nama' => 'Taplak Meja Bulat (Putih)', 'satuan' => 'pcs', 'stok_aktual' => 30],
             ['kategori' => 'Dekorasi', 'nama' => 'Skirting Meja Prasmanan (Maroon)', 'satuan' => 'pcs', 'stok_aktual' => 15],
+            ['kategori' => 'Dekorasi', 'nama' => 'Rangka Backdrop Besi Modular 3x6m', 'satuan' => 'set', 'stok_aktual' => 4],
+            ['kategori' => 'Dekorasi', 'nama' => 'Standing Flower Besi Rustic', 'satuan' => 'unit', 'stok_aktual' => 12],
+            ['kategori' => 'Dekorasi', 'nama' => 'Karpet Merah (Red Carpet 20m)', 'satuan' => 'roll', 'stok_aktual' => 6],
+            ['kategori' => 'Dekorasi', 'nama' => 'Vas Bunga Kaca Meja VIP', 'satuan' => 'pcs', 'stok_aktual' => 40],
+
+            // Sound, Lighting & Kelistrikan
+            ['kategori' => 'Tata Suara & Lampu', 'nama' => 'Lampu Sorot Par LED RGB', 'satuan' => 'unit', 'stok_aktual' => 16],
+            ['kategori' => 'Tata Suara & Lampu', 'nama' => 'Speaker Aktif Portable 15 Inch', 'satuan' => 'set', 'stok_aktual' => 4],
+            ['kategori' => 'Tata Suara & Lampu', 'nama' => 'Mic Wireless Handheld', 'satuan' => 'set', 'stok_aktual' => 6],
+            ['kategori' => 'Tata Suara & Lampu', 'nama' => 'Kabel Roll 25m', 'satuan' => 'pcs', 'stok_aktual' => 10],
 
             // Alat Pendukung Operasional Lapangan
             ['kategori' => 'Logistik', 'nama' => 'Box Container Plastik Besar', 'satuan' => 'unit', 'stok_aktual' => 40],
             ['kategori' => 'Logistik', 'nama' => 'Cooler Box (Es)', 'satuan' => 'unit', 'stok_aktual' => 5],
             ['kategori' => 'Logistik', 'nama' => 'Trolley Barang (Hand Truck)', 'satuan' => 'unit', 'stok_aktual' => 3],
+            ['kategori' => 'Logistik', 'nama' => 'Kipas Misting Fan (Air)', 'satuan' => 'unit', 'stok_aktual' => 6],
             ['kategori' => 'Peralatan Kebersihan', 'nama' => 'Tempat Sampah Besar (Dustbin)', 'satuan' => 'unit', 'stok_aktual' => 10],
             ['kategori' => 'Peralatan Kebersihan', 'nama' => 'Kantong Plastik Sampah (Roll)', 'satuan' => 'roll', 'stok_aktual' => 50],
         ];
