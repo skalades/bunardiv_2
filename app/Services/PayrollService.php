@@ -15,35 +15,140 @@ use Illuminate\Support\Facades\DB;
 class PayrollService
 {
     /**
-     * Generate payroll draft untuk bulan & tahun tertentu.
+     * Generate payroll harian untuk tanggal tertentu (Sangat simpel & cocok untuk crew per hari/event).
      */
-    public function generate(int $bulan, int $tahun, int $dibuatOleh): Payroll
+    public function generateDaily(string|Carbon $tanggal, int $dibuatOleh, bool $onlyAttended = true): Payroll
     {
-        // Pastikan belum ada payroll final di bulan yang sama
-        $existing = Payroll::where('bulan', $bulan)->where('tahun', $tahun)->first();
+        $date = Carbon::parse($tanggal)->toDateString();
+        $carbon = Carbon::parse($date);
+
+        $existing = Payroll::where('tipe_periode', 'harian')->whereDate('tanggal', $date)->first();
         if ($existing && $existing->status === 'final') {
-            throw new \RuntimeException("Payroll {$bulan}/{$tahun} sudah final dan tidak dapat di-generate ulang.");
+            throw new \RuntimeException("Payroll harian tanggal " . $carbon->translatedFormat('d F Y') . " sudah final dan tidak dapat di-generate ulang.");
         }
 
-        return DB::transaction(function () use ($bulan, $tahun, $dibuatOleh, $existing) {
-            // Buat atau reset payroll header
+        return DB::transaction(function () use ($date, $carbon, $dibuatOleh, $existing, $onlyAttended) {
             $payroll = $existing ?? Payroll::create([
-                'bulan'      => $bulan,
-                'tahun'      => $tahun,
-                'status'     => 'draft',
-                'dibuat_oleh' => $dibuatOleh,
+                'tipe_periode' => 'harian',
+                'tanggal'      => $date,
+                'bulan'        => $carbon->month,
+                'tahun'        => $carbon->year,
+                'status'       => 'draft',
+                'dibuat_oleh'  => $dibuatOleh,
             ]);
 
-            // Hapus items lama jika re-generate
             if ($existing) {
                 $existing->items()->delete();
             }
 
-            // Tanggal range bulan ini
+            $users = User::whereHas('employeeProfile', fn ($q) => $q->where('status_aktif', true))
+                ->with('employeeProfile')
+                ->get();
+
+            foreach ($users as $user) {
+                $profile = $user->employeeProfile;
+
+                // Ambil penugasan SPK yang hadir pada tanggal ini
+                $eventRows = WorkOrderUser::where('work_order_users.user_id', $user->id)
+                    ->where('work_order_users.hadir', true)
+                    ->join('work_orders', 'work_orders.id', '=', 'work_order_users.work_order_id')
+                    ->whereDate('work_orders.tanggal_persiapan', $date)
+                    ->select('work_order_users.*')
+                    ->get();
+
+                $jumlahEvent = $eventRows->count();
+
+                // Cek presensi kantor harian pada tanggal ini
+                $hadirKantor = Attendance::where('user_id', $user->id)
+                    ->whereDate('tanggal', $date)
+                    ->where('status', 'hadir')
+                    ->exists();
+
+                $jumlahHari = $hadirKantor ? 1 : 0;
+
+                // Jika filter hanya karyawan yang hadir/bertugas aktif, dan tidak hadir sama sekali hari ini, lewati
+                if ($onlyAttended && $jumlahEvent === 0 && ! $hadirKantor) {
+                    continue;
+                }
+
+                $item = [
+                    'payroll_id'         => $payroll->id,
+                    'user_id'            => $user->id,
+                    'tipe_karyawan'      => $profile->tipe,
+                    'jumlah_hari_hadir'  => $jumlahHari,
+                    'jumlah_event_hadir' => $jumlahEvent,
+                    'potongan_kasbon'    => 0,
+                    'potongan_lain'      => 0,
+                    'status'             => 'draft',
+                ];
+
+                if ($profile->tipe === 'harian') {
+                    $totalUpah = $eventRows->sum(function ($row) use ($profile) {
+                        return $row->upah_dibayar ?? $profile->upah_per_event ?? $profile->gaji_pokok;
+                    });
+
+                    // Jika tidak ada SPK tapi ada presensi kantor hari ini
+                    if ($jumlahEvent === 0 && $hadirKantor) {
+                        $totalUpah = $profile->gaji_pokok;
+                    }
+
+                    $item['gaji_pokok']          = $profile->gaji_pokok;
+                    $item['upah_event']          = $totalUpah;
+                    $item['tunjangan_transport'] = $profile->tunjangan_transport * max(1, $jumlahEvent);
+                    $item['tunjangan_makan']     = $profile->tunjangan_makan * max(1, $jumlahEvent);
+                    $item['total_bruto']         = $totalUpah + $item['tunjangan_transport'] + $item['tunjangan_makan'];
+                } else {
+                    // Karyawan Bulanan: upah harian pro-rata (gaji pokok / 25 hari kerja)
+                    $gajiHarian = round($profile->gaji_pokok / 25);
+                    $item['gaji_pokok']          = $gajiHarian;
+                    $item['upah_event']          = 0;
+                    $item['tunjangan_transport'] = $profile->tunjangan_transport;
+                    $item['tunjangan_makan']     = $profile->tunjangan_makan;
+                    $item['total_bruto']         = ($gajiHarian * $jumlahHari)
+                        + ($profile->tunjangan_transport * $jumlahHari)
+                        + ($profile->tunjangan_makan * $jumlahHari);
+                }
+
+                $item['total_bersih'] = max(0, $item['total_bruto']);
+
+                PayrollItem::create($item);
+            }
+
+            return $payroll->fresh('items');
+        });
+    }
+
+    /**
+     * Generate payroll bulanan untuk bulan & tahun tertentu (Rekap sebulan penuh).
+     */
+    public function generate(int $bulan, int $tahun, int $dibuatOleh): Payroll
+    {
+        // Pastikan belum ada payroll bulanan final di bulan yang sama
+        $existing = Payroll::where('tipe_periode', 'bulanan')
+            ->where('bulan', $bulan)
+            ->where('tahun', $tahun)
+            ->first();
+
+        if ($existing && $existing->status === 'final') {
+            throw new \RuntimeException("Payroll bulanan {$bulan}/{$tahun} sudah final dan tidak dapat di-generate ulang.");
+        }
+
+        return DB::transaction(function () use ($bulan, $tahun, $dibuatOleh, $existing) {
+            $payroll = $existing ?? Payroll::create([
+                'tipe_periode' => 'bulanan',
+                'bulan'        => $bulan,
+                'tahun'        => $tahun,
+                'status'       => 'draft',
+                'dibuat_oleh'  => $dibuatOleh,
+            ]);
+
+            if ($existing) {
+                $existing->items()->delete();
+            }
+
             $startDate = Carbon::create($tahun, $bulan, 1)->startOfMonth();
             $endDate   = $startDate->copy()->endOfMonth();
 
-            // Ambil semua karyawan aktif yang punya profil
             $users = User::whereHas('employeeProfile', fn ($q) => $q->where('status_aktif', true))
                 ->with('employeeProfile')
                 ->get();
@@ -52,15 +157,15 @@ class PayrollService
                 $profile = $user->employeeProfile;
                 $item    = ['payroll_id' => $payroll->id, 'user_id' => $user->id];
 
-                $item['tipe_karyawan']      = $profile->tipe;
-                $item['gaji_pokok']         = $profile->gaji_pokok;
+                $item['tipe_karyawan']       = $profile->tipe;
+                $item['gaji_pokok']          = $profile->gaji_pokok;
                 $item['tunjangan_transport'] = $profile->tunjangan_transport;
-                $item['tunjangan_makan']    = $profile->tunjangan_makan;
+                $item['tunjangan_makan']     = $profile->tunjangan_makan;
 
                 if ($profile->tipe === 'bulanan') {
-                    // Hitung hari hadir dari tabel attendances
                     $jumlahHadir = Attendance::where('user_id', $user->id)
-                        ->whereBetween('tanggal', [$startDate, $endDate])
+                        ->whereDate('tanggal', '>=', $startDate->toDateString())
+                        ->whereDate('tanggal', '<=', $endDate->toDateString())
                         ->where('status', 'hadir')
                         ->count();
 
@@ -71,8 +176,6 @@ class PayrollService
                         + $profile->tunjangan_transport
                         + $profile->tunjangan_makan;
                 } else {
-                    // Hitung event yang dihadiri (work_order_users.hadir = true)
-                    // join ke work_orders untuk filter tanggal
                     $eventRows = WorkOrderUser::where('work_order_users.user_id', $user->id)
                         ->where('work_order_users.hadir', true)
                         ->join('work_orders', 'work_orders.id', '=', 'work_order_users.work_order_id')
@@ -82,7 +185,6 @@ class PayrollService
 
                     $jumlahEvent = $eventRows->count();
 
-                    // Upah: pakai upah_dibayar aktual jika ada, fallback ke upah_per_event profil
                     $totalUpah = $eventRows->sum(function ($row) use ($profile) {
                         return $row->upah_dibayar ?? $profile->upah_per_event ?? $profile->gaji_pokok;
                     });
@@ -95,7 +197,7 @@ class PayrollService
                         + ($profile->tunjangan_makan * $jumlahEvent);
                 }
 
-                // Hitung total kasbon auto_potong aktif
+                // Hitung total kasbon auto_potong aktif (hanya pada payroll bulanan)
                 $totalKasbon = EmployeeLoan::where('user_id', $user->id)
                     ->where('status', 'disetujui')
                     ->where('metode_cicilan', 'auto_potong_gaji')
@@ -132,7 +234,6 @@ class PayrollService
                     continue;
                 }
 
-                // Ambil kasbon aktif auto_potong milik karyawan ini
                 $loans = EmployeeLoan::where('user_id', $item->user_id)
                     ->where('status', 'disetujui')
                     ->where('metode_cicilan', 'auto_potong_gaji')
@@ -154,7 +255,6 @@ class PayrollService
                         'dicatat_oleh'     => $payroll->dibuat_oleh,
                         'catatan'          => "Auto potong gaji {$payroll->nama_bulan}",
                     ]);
-                    // sisa_hutang diupdate otomatis oleh EmployeeLoanPayment::booted()
                 }
             }
 

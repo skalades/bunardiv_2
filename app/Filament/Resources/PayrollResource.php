@@ -61,6 +61,17 @@ class PayrollResource extends Resource
                 Section::make('Informasi Periode Penggajian')
                     ->columns(2)
                     ->schema([
+                        Select::make('tipe_periode')
+                            ->label('Tipe Payroll')
+                            ->options([
+                                'harian'  => 'Harian',
+                                'bulanan' => 'Bulanan',
+                            ])
+                            ->disabled(),
+                        DatePicker::make('tanggal')
+                            ->label('Tanggal Payroll')
+                            ->disabled()
+                            ->visible(fn ($get) => $get('tipe_periode') === 'harian'),
                         Select::make('bulan')
                             ->label('Bulan')
                             ->options([
@@ -78,12 +89,12 @@ class PayrollResource extends Resource
                                 12 => 'Desember',
                             ])
                             ->disabled()
-                            ->required(),
+                            ->visible(fn ($get) => $get('tipe_periode') === 'bulanan'),
                         Select::make('tahun')
                             ->label('Tahun')
                             ->options(array_combine(range(2024, 2030), range(2024, 2030)))
                             ->disabled()
-                            ->required(),
+                            ->visible(fn ($get) => $get('tipe_periode') === 'bulanan'),
                         Select::make('status')
                             ->label('Status Payroll')
                             ->options([
@@ -105,12 +116,16 @@ class PayrollResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('tahun', 'desc')
+            ->defaultSort('id', 'desc')
             ->columns([
                 TextColumn::make('nama_bulan')
                     ->label('Periode')
-                    ->sortable()
                     ->weight('bold'),
+                TextColumn::make('tipe_periode')
+                    ->label('Tipe')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'harian' ? 'info' : 'primary')
+                    ->formatStateUsing(fn ($state) => ucfirst($state)),
                 TextColumn::make('items_count')
                     ->label('Jumlah Karyawan')
                     ->counts('items')
@@ -137,6 +152,12 @@ class PayrollResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('tipe_periode')
+                    ->label('Tipe Periode')
+                    ->options([
+                        'harian'  => 'Harian',
+                        'bulanan' => 'Bulanan',
+                    ]),
                 SelectFilter::make('status')
                     ->options([
                         'draft' => 'Draft',

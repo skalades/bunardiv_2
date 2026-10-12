@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Payroll extends Model
 {
     protected $fillable = [
-        'bulan', 'tahun', 'tanggal_proses', 'status', 'catatan', 'dibuat_oleh',
+        'tipe_periode', 'tanggal', 'bulan', 'tahun', 'tanggal_proses', 'status', 'catatan', 'dibuat_oleh',
     ];
 
     protected $casts = [
+        'tanggal'        => 'date',
         'tanggal_proses' => 'date',
         'bulan'          => 'integer',
         'tahun'          => 'integer',
@@ -30,12 +31,17 @@ class Payroll extends Model
 
     public function getNamaBulanAttribute(): string
     {
+        if ($this->tipe_periode === 'harian' && $this->tanggal) {
+            return 'Harian (' . \Carbon\Carbon::parse($this->tanggal)->translatedFormat('d M Y') . ')';
+        }
+
         $bulanNama = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
             4 => 'April', 5 => 'Mei', 6 => 'Juni',
             7 => 'Juli', 8 => 'Agustus', 9 => 'September',
             10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
+
         return ($bulanNama[$this->bulan] ?? '?') . ' ' . $this->tahun;
     }
 }

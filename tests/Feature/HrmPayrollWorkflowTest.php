@@ -199,4 +199,64 @@ class HrmPayrollWorkflowTest extends TestCase
         $this->assertTrue(Attendance::where('user_id', $user1->id)->whereDate('tanggal', '2026-10-15')->where('status', 'hadir')->exists());
         $this->assertTrue(Attendance::where('user_id', $user2->id)->whereDate('tanggal', '2026-10-15')->where('status', 'hadir')->exists());
     }
+
+    public function test_payroll_service_generates_daily_accurately(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $crew = User::factory()->create(['name' => 'Crew Daily Test']);
+        EmployeeProfile::create([
+            'user_id'             => $crew->id,
+            'nik'                 => 'DAILY-001',
+            'jabatan'             => 'Kru Dekorasi',
+            'tipe'                => 'harian',
+            'gaji_pokok'          => 100000,
+            'upah_per_event'      => 150000,
+            'tunjangan_transport' => 15000,
+            'tunjangan_makan'     => 25000,
+            'status_aktif'        => true,
+        ]);
+
+        $customer = \App\Models\Customer::create(['nama' => 'Cust Daily', 'no_telepon' => '08999', 'alamat' => 'Alamat']);
+        $order = Order::create([
+            'customer_id' => $customer->id,
+            'no_order'    => 'ORD-DAILY-01',
+            'nama_acara'  => 'Acara Daily Test',
+            'tanggal'     => '2026-10-12',
+            'total'       => 2000000,
+        ]);
+
+        $wo = WorkOrder::create([
+            'order_id'           => $order->id,
+            'pic_id'             => $admin->id,
+            'spk_number'         => 'SPK-DAILY-01',
+            'surat_jalan_number' => 'SJ-DAILY-01',
+            'tanggal_persiapan'  => '2026-10-12',
+            'status'             => 'confirmed',
+        ]);
+
+        WorkOrderUser::create([
+            'work_order_id' => $wo->id,
+            'user_id'       => $crew->id,
+            'peran'         => 'Kru Lapangan',
+            'hadir'         => true,
+            'upah_dibayar'  => 150000,
+        ]);
+
+        $service = app(PayrollService::class);
+        $payroll = $service->generateDaily('2026-10-12', $admin->id, true);
+
+        $this->assertEquals('harian', $payroll->tipe_periode);
+        $this->assertEquals('2026-10-12', $payroll->tanggal->format('Y-m-d'));
+        $this->assertEquals('draft', $payroll->status);
+        $this->assertCount(1, $payroll->items);
+
+        $item = $payroll->items->first();
+        $this->assertEquals($crew->id, $item->user_id);
+        $this->assertEquals(150000, (float) $item->upah_event);
+        $this->assertEquals(15000, (float) $item->tunjangan_transport);
+        $this->assertEquals(25000, (float) $item->tunjangan_makan);
+        $this->assertEquals(190000, (float) $item->total_bruto);
+        $this->assertEquals(19000, (float) $item->total_bruto - 171000); // 190.000 total
+        $this->assertEquals(190000, (float) $item->total_bersih);
+    }
 }
