@@ -103,26 +103,7 @@ class EmployeeProfileSeeder extends Seeder
             ]
         );
 
-        // 5. Sample Absensi untuk Budi & Siti (Bulan ini)
-        $now = Carbon::now();
-        for ($i = 1; $i <= min(15, $now->day); $i++) {
-            $tgl = Carbon::create($now->year, $now->month, $i);
-            if ($tgl->isWeekend()) {
-                continue;
-            }
-
-            Attendance::firstOrCreate(
-                ['user_id' => $budi->id, 'tanggal' => $tgl->toDateString()],
-                ['status' => 'hadir', 'dicatat_oleh' => $admin?->id]
-            );
-
-            Attendance::firstOrCreate(
-                ['user_id' => $siti->id, 'tanggal' => $tgl->toDateString()],
-                ['status' => ($i === 5 ? 'izin' : 'hadir'), 'keterangan' => ($i === 5 ? 'Keperluan keluarga' : null), 'dicatat_oleh' => $admin?->id]
-            );
-        }
-
-        // 6. Sample Kasbon Agus (Auto Potong Gaji)
+        // 5. Sample Kasbon Agus (Auto Potong Gaji)
         $loanAgus = EmployeeLoan::firstOrCreate(
             ['user_id' => $agus->id, 'jumlah' => 500000],
             [
@@ -137,7 +118,7 @@ class EmployeeProfileSeeder extends Seeder
             ]
         );
 
-        // 7. Sample Kasbon Budi (Manual, sudah dicicil sebagian)
+        // 6. Sample Kasbon Budi (Manual, sudah dicicil sebagian)
         $loanBudi = EmployeeLoan::firstOrCreate(
             ['user_id' => $budi->id, 'jumlah' => 1000000],
             [
@@ -164,16 +145,26 @@ class EmployeeProfileSeeder extends Seeder
             ]);
         }
 
-        // 8. Assign Agus & Rian ke WorkOrder aktif (jika ada) dan tandai hadir
-        $wo = WorkOrder::first();
-        if ($wo) {
+        // 7. Penugasan Agus & Rian ke WorkOrder aktif (Belum Hadir, siap ditest absensi)
+        $order = \App\Models\Order::first();
+        if ($order) {
+            $wo = WorkOrder::firstOrCreate(
+                ['order_id' => $order->id],
+                [
+                    'pic_id'            => $admin?->id ?? 1,
+                    'tanggal_persiapan' => now()->toDateString(),
+                    'status'            => 'confirmed',
+                    'catatan'           => 'Persiapan acara dekorasi & catering',
+                ]
+            );
+
             WorkOrderUser::updateOrCreate(
                 ['work_order_id' => $wo->id, 'user_id' => $agus->id],
-                ['peran' => 'Crew Dekor', 'hadir' => true, 'upah_dibayar' => 175000]
+                ['peran' => 'Crew Dekor', 'hadir' => false, 'upah_dibayar' => 175000, 'waktu_absen' => null, 'catatan_kehadiran' => null]
             );
             WorkOrderUser::updateOrCreate(
                 ['work_order_id' => $wo->id, 'user_id' => $rian->id],
-                ['peran' => 'Crew Prasmanan', 'hadir' => true, 'upah_dibayar' => 150000]
+                ['peran' => 'Crew Prasmanan', 'hadir' => false, 'upah_dibayar' => 150000, 'waktu_absen' => null, 'catatan_kehadiran' => null]
             );
         }
     }
