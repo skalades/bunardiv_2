@@ -15,6 +15,11 @@ class Attendance extends Model
         'tanggal' => 'date',
     ];
 
+    public function setTanggalAttribute($value): void
+    {
+        $this->attributes['tanggal'] = $value ? \Carbon\Carbon::parse($value)->toDateString() : null;
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

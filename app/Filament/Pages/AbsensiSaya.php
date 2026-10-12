@@ -90,7 +90,7 @@ class AbsensiSaya extends Page
         $today = now()->toDateString();
 
         $existing = Attendance::where('user_id', $userId)
-            ->where('tanggal', $today)
+            ->whereDate('tanggal', $today)
             ->first();
 
         if ($existing) {
@@ -102,19 +102,26 @@ class AbsensiSaya extends Page
             return;
         }
 
-        Attendance::create([
-            'user_id'      => $userId,
-            'tanggal'      => $today,
-            'status'       => $status,
-            'keterangan'   => $keterangan ?: 'Self check-in harian pada ' . now()->format('H:i') . ' WIB',
-            'dicatat_oleh' => $userId,
-        ]);
+        try {
+            Attendance::create([
+                'user_id'      => $userId,
+                'tanggal'      => $today,
+                'status'       => $status,
+                'keterangan'   => $keterangan ?: 'Self check-in harian pada ' . now()->format('H:i') . ' WIB',
+                'dicatat_oleh' => $userId,
+            ]);
 
-        Notification::make()
-            ->title('Absensi Harian Berhasil!')
-            ->body('Kehadiran hari ini (' . now()->translatedFormat('l, d F Y') . ') telah tercatat.')
-            ->success()
-            ->send();
+            Notification::make()
+                ->title('Absensi Harian Berhasil!')
+                ->body('Kehadiran hari ini (' . now()->translatedFormat('l, d F Y') . ') telah tercatat.')
+                ->success()
+                ->send();
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title('Anda sudah mencatat absensi hari ini.')
+                ->warning()
+                ->send();
+        }
     }
 
     protected function getViewData(): array
@@ -125,7 +132,7 @@ class AbsensiSaya extends Page
 
         // Absensi harian hari ini
         $todayAttendance = Attendance::where('user_id', $user->id)
-            ->where('tanggal', $today)
+            ->whereDate('tanggal', $today)
             ->first();
 
         // Daftar penugasan SPK
