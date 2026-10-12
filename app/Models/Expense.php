@@ -20,7 +20,6 @@ class Expense extends Model
         'order_id',
         'metode_pembayaran',
         'pic_id',
-        'bukti_transaksi',
         'catatan',
     ];
 

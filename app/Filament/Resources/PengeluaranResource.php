@@ -11,14 +11,12 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -117,7 +115,7 @@ class PengeluaranResource extends Resource
                             ->required()
                             ->columnSpanFull(),
                     ]),
-                Section::make('Alokasi Proyek & Bukti Transaksi')
+                Section::make('Alokasi Proyek & Penanggung Jawab')
                     ->columns(2)
                     ->schema([
                         Select::make('order_id')
@@ -137,11 +135,6 @@ class PengeluaranResource extends Resource
                             ->default(auth()->id())
                             ->required()
                             ->searchable(),
-                        FileUpload::make('bukti_transaksi')
-                            ->label('Foto Bukti / Nota / Struk')
-                            ->image()
-                            ->directory('pengeluaran-bukti')
-                            ->columnSpanFull(),
                         Textarea::make('catatan')
                             ->label('Catatan Tambahan')
                             ->placeholder('Rincian catatan pengeluaran')
@@ -195,11 +188,6 @@ class PengeluaranResource extends Resource
                     ->label('Metode')
                     ->badge()
                     ->color('gray'),
-                ImageColumn::make('bukti_transaksi')
-                    ->label('Nota')
-                    ->circular()
-                    ->placeholder('-')
-                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('pic.name')
                     ->label('PIC')
                     ->toggleable(isToggledHiddenByDefault: true),
