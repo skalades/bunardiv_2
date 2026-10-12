@@ -128,4 +128,51 @@ class HrmPayrollWorkflowTest extends TestCase
             $this->assertTrue(true);
         }
     }
+
+    public function test_self_attendance_for_event_and_daily(): void
+    {
+        $user = User::factory()->create();
+        $customer = \App\Models\Customer::create(['nama' => 'Cust Test', 'no_telepon' => '08123', 'alamat' => 'Alamat']);
+        $order = Order::create([
+            'customer_id' => $customer->id,
+            'no_order'    => 'ORD-SELF-01',
+            'nama_acara'  => 'Acara Self Test',
+            'tanggal'     => now()->toDateString(),
+            'total'       => 1000000,
+        ]);
+
+        $wo = WorkOrder::create([
+            'order_id'           => $order->id,
+            'pic_id'             => $user->id,
+            'spk_number'         => 'SPK-SELF-01',
+            'surat_jalan_number' => 'SJ-SELF-01',
+            'tanggal_persiapan'  => now()->toDateString(),
+            'status'             => 'confirmed',
+        ]);
+
+        $assignment = WorkOrderUser::create([
+            'work_order_id' => $wo->id,
+            'user_id'       => $user->id,
+            'peran'         => 'Crew Lapangan',
+            'hadir'         => false,
+        ]);
+
+        $this->actingAs($user);
+
+        // Test Livewire AbsensiSaya page checkInEvent
+        \Livewire\Livewire::test(\App\Filament\Pages\AbsensiSaya::class)
+            ->call('checkInEvent', $assignment->id)
+            ->assertHasNoErrors();
+
+        $assignment->refresh();
+        $this->assertTrue($assignment->hadir);
+        $this->assertNotNull($assignment->waktu_absen);
+
+        // Test checkInDaily
+        \Livewire\Livewire::test(\App\Filament\Pages\AbsensiSaya::class)
+            ->call('checkInDaily', 'hadir')
+            ->assertHasNoErrors();
+
+        $this->assertTrue(Attendance::where('user_id', $user->id)->whereDate('tanggal', now()->toDateString())->where('status', 'hadir')->exists());
+    }
 }

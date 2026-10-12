@@ -15,12 +15,14 @@ class WorkOrderUser extends Model
         'user_id',
         'peran',
         'hadir',
+        'waktu_absen',
         'upah_dibayar',
         'catatan_kehadiran',
     ];
 
     protected $casts = [
         'hadir'        => 'boolean',
+        'waktu_absen'  => 'datetime',
         'upah_dibayar' => 'decimal:2',
     ];
 
