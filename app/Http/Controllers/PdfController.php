@@ -62,4 +62,19 @@ class PdfController extends Controller
         
         return $pdf->stream('SuratJalan-'.$workOrder->surat_jalan_number.'.pdf');
     }
+
+    public function slipGaji(\App\Models\PayrollItem $payrollItem)
+    {
+        $payrollItem->load(['user.employeeProfile', 'payroll']);
+        $setting = Setting::first();
+
+        $pdf = Pdf::loadView('pdf.slip-gaji', [
+            'item'    => $payrollItem,
+            'user'    => $payrollItem->user,
+            'payroll' => $payrollItem->payroll,
+            'setting' => $setting,
+        ])->setPaper('a5', 'landscape');
+
+        return $pdf->stream('Slip-Gaji-'.$payrollItem->user->name.'-'.$payrollItem->payroll->nama_bulan.'.pdf');
+    }
 }

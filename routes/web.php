@@ -9,4 +9,5 @@ Route::get('/payments/{payment}/receipt', [PdfController::class, 'receipt'])->na
 
 Route::get('/work-orders/{workOrder}/spk', [PdfController::class, 'spk'])->name('spk.download')->middleware(['auth']);
 Route::get('/work-orders/{workOrder}/surat-jalan', [PdfController::class, 'suratJalan'])->name('surat_jalan.download')->middleware(['auth']);
+Route::get('/payroll-items/{payrollItem}/slip', [PdfController::class, 'slipGaji'])->name('payroll.slip')->middleware(['auth']);
 

@@ -14,6 +14,14 @@ class WorkOrderUser extends Model
         'work_order_id',
         'user_id',
         'peran',
+        'hadir',
+        'upah_dibayar',
+        'catatan_kehadiran',
+    ];
+
+    protected $casts = [
+        'hadir'        => 'boolean',
+        'upah_dibayar' => 'decimal:2',
     ];
 
     public function workOrder(): BelongsTo

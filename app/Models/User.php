@@ -61,4 +61,31 @@ class User extends Authenticatable implements FilamentUser
                     ->withPivot('role')
                     ->withTimestamps();
     }
+
+    // ── HRM Relations ──────────────────────────────────────────
+
+    public function employeeProfile()
+    {
+        return $this->hasOne(EmployeeProfile::class);
+    }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    public function loans()
+    {
+        return $this->hasMany(EmployeeLoan::class);
+    }
+
+    public function payrollItems()
+    {
+        return $this->hasMany(PayrollItem::class);
+    }
+
+    public function workOrderAssignments()
+    {
+        return $this->hasMany(WorkOrderUser::class);
+    }
 }

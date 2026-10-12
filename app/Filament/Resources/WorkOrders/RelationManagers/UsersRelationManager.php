@@ -29,6 +29,16 @@ class UsersRelationManager extends RelationManager
                     ->required()
                     ->default('petugas')
                     ->label('Peran / Tugas'),
+                Forms\Components\Toggle::make('hadir')
+                    ->label('Hadir di Event')
+                    ->default(false),
+                Forms\Components\TextInput::make('upah_dibayar')
+                    ->label('Upah Aktual (Override)')
+                    ->currencyIdr()
+                    ->helperText('Kosongkan jika menggunakan upah standar dari profil karyawan'),
+                Forms\Components\Textarea::make('catatan_kehadiran')
+                    ->label('Catatan Kehadiran')
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -40,15 +50,24 @@ class UsersRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Nama Petugas')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('user.email')
-                    ->label('Email')
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('peran')
                     ->label('Peran / Tugas')
                     ->searchable(),
+                Tables\Columns\IconColumn::make('hadir')
+                    ->label('Hadir')
+                    ->boolean()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('upah_dibayar')
+                    ->label('Upah Event')
+                    ->money('idr')
+                    ->placeholder('-'),
+                Tables\Columns\TextColumn::make('catatan_kehadiran')
+                    ->label('Catatan')
+                    ->limit(20)
+                    ->placeholder('-'),
             ])
             ->filters([
-                //
+                Tables\Filters\TernaryFilter::make('hadir')->label('Kehadiran'),
             ])
             ->headerActions([
                 \Filament\Actions\CreateAction::make(),
