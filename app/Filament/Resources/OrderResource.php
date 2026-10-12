@@ -179,10 +179,10 @@ class OrderResource extends Resource
                 
                 Section::make('Detail Keuangan')
                     ->schema([
-                        \Filament\Infolists\Components\TextEntry::make('subtotal')->label('Subtotal')->money('idr'),
-                        \Filament\Infolists\Components\TextEntry::make('diskon')->label('Diskon')->money('idr'),
-                        \Filament\Infolists\Components\TextEntry::make('biaya_tambahan')->label('Biaya Tambahan')->money('idr'),
-                        \Filament\Infolists\Components\TextEntry::make('total')->label('Total')->money('idr')->weight('bold'),
+                        \Filament\Infolists\Components\TextEntry::make('subtotal')->label('Subtotal')->money('idr', decimalPlaces: 0),
+                        \Filament\Infolists\Components\TextEntry::make('diskon')->label('Diskon')->money('idr', decimalPlaces: 0),
+                        \Filament\Infolists\Components\TextEntry::make('biaya_tambahan')->label('Biaya Tambahan')->money('idr', decimalPlaces: 0),
+                        \Filament\Infolists\Components\TextEntry::make('total')->label('Total')->money('idr', decimalPlaces: 0)->weight('bold'),
                     ])->columns(2),
 
                 Section::make('Item Pesanan')
@@ -192,8 +192,8 @@ class OrderResource extends Resource
                             ->schema([
                                 \Filament\Infolists\Components\TextEntry::make('product.nama')->label('Produk'),
                                 \Filament\Infolists\Components\TextEntry::make('qty')->label('Qty'),
-                                \Filament\Infolists\Components\TextEntry::make('harga')->label('Harga')->money('idr'),
-                                \Filament\Infolists\Components\TextEntry::make('subtotal')->label('Subtotal')->money('idr'),
+                                \Filament\Infolists\Components\TextEntry::make('harga')->label('Harga')->money('idr', decimalPlaces: 0),
+                                \Filament\Infolists\Components\TextEntry::make('subtotal')->label('Subtotal')->money('idr', decimalPlaces: 0),
                             ])
                             ->columns(4)
                     ])
@@ -222,7 +222,7 @@ class OrderResource extends Resource
                     ->sortable(),
                 TextColumn::make('total')
                     ->label('TOTAL')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->sortable()
                     ->color('warning'),
                 TextColumn::make('status')

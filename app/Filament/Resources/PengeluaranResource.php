@@ -175,7 +175,7 @@ class PengeluaranResource extends Resource
                     ->limit(40),
                 TextColumn::make('nominal')
                     ->label('Nominal')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->sortable()
                     ->weight('bold')
                     ->color('danger'),

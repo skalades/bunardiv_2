@@ -104,7 +104,7 @@ class PaymentsRelationManager extends RelationManager
                     ->searchable(),
                 TextColumn::make('amount')
                     ->label('Jumlah')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->sortable(),
             ])
             ->filters([

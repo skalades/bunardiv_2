@@ -134,7 +134,7 @@ class PayrollResource extends Resource
                 TextColumn::make('total_bersih')
                     ->label('Total Penggajian')
                     ->getStateUsing(fn (Payroll $record) => $record->items->sum('total_bersih'))
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->weight('bold')
                     ->color('success'),
                 TextColumn::make('status')

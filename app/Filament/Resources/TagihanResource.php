@@ -62,18 +62,18 @@ class TagihanResource extends Resource
                 TextColumn::make('nama_acara')->label('Acara'),
                 TextColumn::make('total')
                     ->label('Total Tagihan')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->sortable(),
                 TextColumn::make('payments_sum_amount')
                     ->label('Sudah Dibayar')
                     ->sum('payments', 'amount')
-                    ->money('idr'),
+                    ->money('idr', decimalPlaces: 0),
                 TextColumn::make('sisa')
                     ->label('Sisa Tagihan')
                     ->state(function (Order $record): float {
                         return $record->total - $record->payments()->sum('amount');
                     })
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->color(fn ($state) => $state > 0 ? 'danger' : 'success')
                     ->weight('bold'),
             ])
@@ -86,8 +86,11 @@ class TagihanResource extends Resource
                         TextInput::make('judul_tagihan')
                             ->label('Keterangan Tagihan')
                             ->required()
-                            ->default('Pembayaran DP')
-                            ->placeholder('Misal: Pembayaran DP 50%'),
+                            ->default(function (Order $record) {
+                                $paid = $record->payments()->sum('amount');
+                                return $paid > 0 ? 'Pelunasan Tagihan' : 'Pembayaran DP';
+                            })
+                            ->placeholder('Misal: Pembayaran DP 50% atau Pelunasan'),
                         TextInput::make('persentase')
                             ->label('Hitung dari Persentase (%)')
                             ->numeric()
@@ -102,7 +105,16 @@ class TagihanResource extends Resource
                             ->label('Nominal Tagihan')
                             ->currencyIdr()
                             ->required()
-                            ->default(fn (Order $record) => $record->total)
+                            ->default(function (Order $record) {
+                                $paid = $record->payments()->sum('amount');
+                                $sisa = max(0, $record->total - $paid);
+                                return (int) round($sisa > 0 ? $sisa : $record->total);
+                            })
+                            ->helperText(function (Order $record) {
+                                $paid = $record->payments()->sum('amount');
+                                $sisa = max(0, $record->total - $paid);
+                                return 'Sisa belum terbayar: Rp ' . number_format($sisa, 0, ',', '.') . ' (Total order: Rp ' . number_format($record->total, 0, ',', '.') . ')';
+                            })
                             ->live(debounce: 500)
                             ->afterStateUpdated(function ($set, $state, Order $record) {
                                 if ($state && $record->total > 0) {

@@ -59,7 +59,7 @@ class InvoiceResource extends Resource
                     ->placeholder('-'),
                 TextEntry::make('nominal_tagihan')
                     ->label('Nominal Tagihan')
-                    ->money('idr'),
+                    ->money('idr', decimalPlaces: 0),
                 TextEntry::make('jatuh_tempo')
                     ->date()
                     ->placeholder('-'),
@@ -86,7 +86,7 @@ class InvoiceResource extends Resource
                     ->searchable(),
                 TextColumn::make('nominal_tagihan')
                     ->label('Nominal Tagihan')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->sortable(),
                 TextColumn::make('jatuh_tempo')
                     ->date()

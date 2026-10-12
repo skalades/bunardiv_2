@@ -66,4 +66,34 @@ class TagihanInvoicePaymentTest extends TestCase
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/pdf');
     }
+
+    public function test_custom_invoice_action_defaults_to_remaining_balance_when_partially_paid(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+
+        $customer = Customer::create(['nama' => 'Dafa', 'no_telepon' => '081234567', 'alamat' => 'Yogya']);
+        $order = Order::create([
+            'customer_id' => $customer->id,
+            'no_order'    => 'ORD-DAFA-01',
+            'nama_acara'  => 'Kawinan',
+            'tanggal'     => '2026-10-25',
+            'total'       => 45000000,
+        ]);
+
+        Payment::create([
+            'order_id'         => $order->id,
+            'amount'           => 13000000,
+            'payment_method'   => 'Transfer BCA',
+            'payment_date'     => '2026-10-12',
+            'reference_number' => 'PAY-DAFA-DP',
+        ]);
+
+        Livewire::test(TagihanResource\Pages\ListTagihans::class)
+            ->mountTableAction('custom_invoice', $order)
+            ->assertTableActionDataSet([
+                'judul_tagihan'   => 'Pelunasan Tagihan',
+                'nominal_tagihan' => 32000000,
+            ]);
+    }
 }

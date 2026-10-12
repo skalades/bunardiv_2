@@ -119,31 +119,31 @@ class ItemsRelationManager extends RelationManager
                     }),
                 TextColumn::make('bonus')
                     ->label('Bonus')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->color('success')
                     ->placeholder('-'),
                 TextColumn::make('lembur')
                     ->label('Lembur')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->color('success')
                     ->placeholder('-'),
                 TextColumn::make('total_bruto')
                     ->label('Total Bruto')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->sortable(),
                 TextColumn::make('potongan_kasbon')
                     ->label('Potongan Kasbon')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->color('danger')
                     ->placeholder('-'),
                 TextColumn::make('potongan_lain')
                     ->label('Potongan Lain')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->color('danger')
                     ->placeholder('-'),
                 TextColumn::make('total_bersih')
                     ->label('Gaji Bersih')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->sortable()
                     ->weight('bold')
                     ->color('success'),

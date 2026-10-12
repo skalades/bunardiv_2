@@ -69,7 +69,7 @@ class PaymentsRelationManager extends RelationManager
                     ->sortable(),
                 TextColumn::make('jumlah_bayar')
                     ->label('Jumlah Bayar')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->sortable()
                     ->weight('bold'),
                 TextColumn::make('sumber')

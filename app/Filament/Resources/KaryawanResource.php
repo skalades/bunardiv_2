@@ -175,7 +175,7 @@ class KaryawanResource extends Resource
                     ->formatStateUsing(fn ($state) => ucfirst($state ?? '-')),
                 TextColumn::make('employeeProfile.gaji_pokok')
                     ->label('Gaji / Upah')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->sortable(),
                 TextColumn::make('employeeProfile.no_hp')
                     ->label('Kontak')

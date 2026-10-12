@@ -141,11 +141,11 @@ class KasbonResource extends Resource
                     ->weight('bold'),
                 TextColumn::make('jumlah')
                     ->label('Total Kasbon')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->sortable(),
                 TextColumn::make('sisa_hutang')
                     ->label('Sisa Hutang')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->sortable()
                     ->weight('bold')
                     ->color(fn ($state) => $state > 0 ? 'danger' : 'success'),
@@ -167,7 +167,7 @@ class KasbonResource extends Resource
                     ->formatStateUsing(fn ($state) => $state === 'auto_potong_gaji' ? 'Auto Potong Gaji' : 'Manual'),
                 TextColumn::make('cicilan_per_bulan')
                     ->label('Cicilan/Bulan')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->placeholder('-'),
             ])
             ->filters([

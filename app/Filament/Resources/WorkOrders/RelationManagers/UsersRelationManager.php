@@ -59,7 +59,7 @@ class UsersRelationManager extends RelationManager
                     ->sortable(),
                 Tables\Columns\TextColumn::make('upah_dibayar')
                     ->label('Upah Event')
-                    ->money('idr')
+                    ->money('idr', decimalPlaces: 0)
                     ->placeholder('-'),
                 Tables\Columns\TextColumn::make('catatan_kehadiran')
                     ->label('Catatan')
