@@ -36,7 +36,7 @@ class PaymentsRelationManager extends RelationManager
                     ->label('Nominal Pembayaran')
                     ->currencyIdr()
                     ->required()
-                    ->default(fn () => $loan->sisa_hutang)
+                    ->default(fn () => (int) round($loan->sisa_hutang))
                     ->helperText('Maksimal: Rp ' . number_format($loan->sisa_hutang, 0, ',', '.')),
                 DatePicker::make('tanggal')
                     ->label('Tanggal Bayar')

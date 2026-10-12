@@ -11,7 +11,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            \Filament\Schemas\Components\StateCasts\StripCharactersStateCast::class,
+            function ($app, array $params = []) {
+                return new \App\Support\SafeStripCharactersStateCast($params['characters'] ?? []);
+            }
+        );
     }
 
     /**
@@ -23,6 +28,15 @@ class AppServiceProvider extends ServiceProvider
             /** @var \Filament\Forms\Components\TextInput $this */
             return $this
                 ->prefix($prefix)
+                ->formatStateUsing(function ($state) {
+                    if (blank($state)) {
+                        return null;
+                    }
+                    if (is_numeric($state)) {
+                        return (int) round((float) $state);
+                    }
+                    return $state;
+                })
                 ->mask(\Filament\Support\RawJs::make('$money($input, \',\', \'.\', ' . $precision . ')'))
                 ->stripCharacters('.')
                 ->numeric();

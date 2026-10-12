@@ -89,4 +89,32 @@ class NominalCurrencyFormattingTest extends TestCase
         $this->assertEquals('Rp', $nominalField->getPrefixLabel());
         $this->assertEquals(['.'], $nominalField->getStripCharacters());
     }
+
+    public function test_currency_idr_formats_decimal_database_values_without_multiplying_by_100(): void
+    {
+        $livewire = new class extends Component implements HasSchemas {
+            use InteractsWithSchemas;
+            public ?array $data = [];
+            public function render() { return '<div></div>'; }
+        };
+
+        $schema = Schema::make($livewire)
+            ->statePath('data')
+            ->components([
+                TextInput::make('jumlah_bayar')->currencyIdr(),
+            ]);
+
+        // When database provides '500000.00' (decimal:2 cast string)
+        $schema->fill(['jumlah_bayar' => '500000.00']);
+        $this->assertEquals(500000, $livewire->data['jumlah_bayar']);
+
+        $schema->fill(['jumlah_bayar' => 500000.00]);
+        $this->assertEquals(500000, $livewire->data['jumlah_bayar']);
+
+        $schema->fill(['jumlah_bayar' => '500000']);
+        $this->assertEquals(500000, $livewire->data['jumlah_bayar']);
+
+        $schema->fill(['jumlah_bayar' => null]);
+        $this->assertNull($livewire->data['jumlah_bayar']);
+    }
 }

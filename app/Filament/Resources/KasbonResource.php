@@ -212,7 +212,7 @@ class KasbonResource extends Resource
                             ->label('Nominal Pembayaran')
                             ->currencyIdr()
                             ->required()
-                            ->default(fn (EmployeeLoan $record) => $record->sisa_hutang)
+                            ->default(fn (EmployeeLoan $record) => (int) round($record->sisa_hutang))
                             ->helperText(fn (EmployeeLoan $record) => 'Sisa saat ini: Rp ' . number_format($record->sisa_hutang, 0, ',', '.')),
                         DatePicker::make('tanggal')
                             ->label('Tanggal Pembayaran')
