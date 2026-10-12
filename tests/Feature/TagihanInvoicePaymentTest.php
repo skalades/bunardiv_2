@@ -96,4 +96,53 @@ class TagihanInvoicePaymentTest extends TestCase
                 'nominal_tagihan' => 32000000,
             ]);
     }
+
+    public function test_bayar_action_defaults_to_selected_invoice_nominal(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+
+        $customer = Customer::create(['nama' => 'Test Customer', 'no_telepon' => '08111111', 'alamat' => 'Solo']);
+        $order = Order::create([
+            'customer_id' => $customer->id,
+            'no_order'    => 'ORD-202610-0002LKP',
+            'nama_acara'  => 'Event Test',
+            'tanggal'     => '2026-10-25',
+            'total'       => 10000000,
+        ]);
+
+        // Invoice 1 (DP1): 2.000.000 - already paid
+        $inv1 = Invoice::create([
+            'no_invoice'      => 'INV-ORD-202610-0002LKP-DP1',
+            'order_id'        => $order->id,
+            'judul_tagihan'   => 'Pembayaran DP 1',
+            'nominal_tagihan' => 2000000,
+            'jatuh_tempo'     => '2026-10-20',
+        ]);
+        Payment::create([
+            'order_id'         => $order->id,
+            'invoice_id'       => $inv1->id,
+            'amount'           => 2000000,
+            'payment_method'   => 'Transfer BCA',
+            'payment_date'     => '2026-10-10',
+            'reference_number' => 'PAY-001',
+        ]);
+
+        // Invoice 2 (DP2): 1.637.907 - UNPAID
+        $inv2 = Invoice::create([
+            'no_invoice'      => 'INV-ORD-202610-0002LKP-DP2',
+            'order_id'        => $order->id,
+            'judul_tagihan'   => 'Pembayaran DP 2',
+            'nominal_tagihan' => 1637907,
+            'jatuh_tempo'     => '2026-10-22',
+        ]);
+
+        // When opening the Bayar modal, invoice_id should be inv2 and amount should be 1637907 (not total order remaining 8000000)
+        Livewire::test(TagihanResource\Pages\ListTagihans::class)
+            ->mountTableAction('add_payment', $order)
+            ->assertTableActionDataSet([
+                'invoice_id' => $inv2->id,
+                'amount'     => 1637907,
+            ]);
+    }
 }

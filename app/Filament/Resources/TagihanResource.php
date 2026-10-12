@@ -200,7 +200,13 @@ class TagihanResource extends Resource
                                     );
                                     return $mainInv->id;
                                 }
-                                return $record->invoices->last()?->id;
+
+                                $unpaidInv = $record->invoices->first(function ($inv) {
+                                    $paid = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
+                                    return ($inv->nominal_tagihan - $paid) > 0;
+                                });
+
+                                return $unpaidInv?->id ?? $record->invoices->last()?->id;
                             })
                             ->live()
                             ->afterStateUpdated(function ($set, $state) {
@@ -209,9 +215,7 @@ class TagihanResource extends Resource
                                     if ($inv) {
                                         $paidForInv = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
                                         $sisaInv = max(0, $inv->nominal_tagihan - $paidForInv);
-                                        if ($sisaInv > 0) {
-                                            $set('amount', round($sisaInv));
-                                        }
+                                        $set('amount', (int) round($sisaInv > 0 ? $sisaInv : $inv->nominal_tagihan));
                                     }
                                 }
                             })
@@ -221,7 +225,39 @@ class TagihanResource extends Resource
                             ->label('Jumlah Bayar')
                             ->currencyIdr()
                             ->required()
-                            ->default(fn (Order $record) => round($record->total - $record->payments()->sum('amount'))),
+                            ->default(function (Order $record, $get) {
+                                $record->loadMissing('invoices');
+                                $invoiceId = $get('invoice_id');
+                                if (! $invoiceId) {
+                                    $unpaidInv = $record->invoices->first(function ($inv) {
+                                        $paid = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
+                                        return ($inv->nominal_tagihan - $paid) > 0;
+                                    });
+                                    $invoice = $unpaidInv ?? $record->invoices->last();
+                                } else {
+                                    $invoice = Invoice::find($invoiceId);
+                                }
+
+                                if ($invoice) {
+                                    $paid = \App\Models\Payment::where('invoice_id', $invoice->id)->sum('amount');
+                                    $sisaInv = max(0, $invoice->nominal_tagihan - $paid);
+                                    if ($sisaInv > 0) {
+                                        return (int) round($sisaInv);
+                                    }
+                                }
+
+                                return (int) round(max(0, $record->total - $record->payments()->sum('amount')));
+                            })
+                            ->helperText(function ($get, Order $record) {
+                                $invoiceId = $get('invoice_id');
+                                if ($invoiceId && ($inv = Invoice::find($invoiceId))) {
+                                    $paid = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
+                                    $sisa = max(0, $inv->nominal_tagihan - $paid);
+                                    return "Nominal invoice ini: Rp " . number_format($inv->nominal_tagihan, 0, ',', '.') . " (Sisa tagihan invoice: Rp " . number_format($sisa, 0, ',', '.') . ")";
+                                }
+                                $sisaOrder = max(0, $record->total - $record->payments()->sum('amount'));
+                                return "Sisa tagihan order: Rp " . number_format($sisaOrder, 0, ',', '.');
+                            }),
                         Select::make('payment_method')
                             ->label('Metode Pembayaran')
                             ->options([
