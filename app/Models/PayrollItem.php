@@ -11,7 +11,7 @@ class PayrollItem extends Model
     protected $fillable = [
         'payroll_id', 'user_id', 'tipe_karyawan',
         'gaji_pokok', 'tunjangan_transport', 'tunjangan_makan',
-        'upah_event', 'jumlah_hari_hadir', 'jumlah_event_hadir',
+        'upah_event', 'bonus', 'lembur', 'jumlah_hari_hadir', 'jumlah_event_hadir',
         'potongan_kasbon', 'potongan_lain',
         'total_bruto', 'total_bersih',
         'status', 'tanggal_dibayar', 'metode_bayar', 'catatan',
@@ -23,6 +23,8 @@ class PayrollItem extends Model
         'tunjangan_transport' => 'decimal:2',
         'tunjangan_makan'     => 'decimal:2',
         'upah_event'          => 'decimal:2',
+        'bonus'               => 'decimal:2',
+        'lembur'              => 'decimal:2',
         'potongan_kasbon'     => 'decimal:2',
         'potongan_lain'       => 'decimal:2',
         'total_bruto'         => 'decimal:2',

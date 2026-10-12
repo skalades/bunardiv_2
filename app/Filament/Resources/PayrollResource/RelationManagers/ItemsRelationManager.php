@@ -30,19 +30,43 @@ class ItemsRelationManager extends RelationManager
 
     public function form(Schema $schema): Schema
     {
+        $recalculate = function ($get, $set, $record) {
+            if (! $record) {
+                return;
+            }
+
+            $bonus        = (float) ($get('bonus') ?? 0);
+            $lembur       = (float) ($get('lembur') ?? 0);
+            $potonganLain = (float) ($get('potongan_lain') ?? 0);
+
+            $baseBruto = (float) $record->total_bruto - (float) ($record->bonus ?? 0) - (float) ($record->lembur ?? 0);
+            $newBruto  = max(0, $baseBruto + $bonus + $lembur);
+            $newBersih = max(0, $newBruto - (float) $record->potongan_kasbon - $potonganLain);
+
+            $set('total_bruto', $newBruto);
+            $set('total_bersih', $newBersih);
+        };
+
         return $schema
             ->components([
+                TextInput::make('bonus')
+                    ->label('Bonus')
+                    ->currencyIdr()
+                    ->default(0)
+                    ->live(debounce: 500)
+                    ->afterStateUpdated(fn ($get, $set, $record) => $recalculate($get, $set, $record)),
+                TextInput::make('lembur')
+                    ->label('Uang Lembur')
+                    ->currencyIdr()
+                    ->default(0)
+                    ->live(debounce: 500)
+                    ->afterStateUpdated(fn ($get, $set, $record) => $recalculate($get, $set, $record)),
                 TextInput::make('potongan_lain')
                     ->label('Potongan Lain / Penyesuaian')
                     ->currencyIdr()
                     ->default(0)
                     ->live(debounce: 500)
-                    ->afterStateUpdated(function ($set, $state, $record) {
-                        if ($record) {
-                            $bersih = max(0, $record->total_bruto - $record->potongan_kasbon - (float) $state);
-                            $set('total_bersih', $bersih);
-                        }
-                    }),
+                    ->afterStateUpdated(fn ($get, $set, $record) => $recalculate($get, $set, $record)),
                 TextInput::make('total_bersih')
                     ->label('Total Gaji Bersih')
                     ->currencyIdr()
@@ -93,6 +117,16 @@ class ItemsRelationManager extends RelationManager
                             ? ($record->jumlah_hari_hadir . ' Hari')
                             : ($record->jumlah_event_hadir . ' Event/SPK');
                     }),
+                TextColumn::make('bonus')
+                    ->label('Bonus')
+                    ->money('idr')
+                    ->color('success')
+                    ->placeholder('-'),
+                TextColumn::make('lembur')
+                    ->label('Lembur')
+                    ->money('idr')
+                    ->color('success')
+                    ->placeholder('-'),
                 TextColumn::make('total_bruto')
                     ->label('Total Bruto')
                     ->money('idr')
@@ -150,7 +184,19 @@ class ItemsRelationManager extends RelationManager
                         ]);
                         Notification::make()->title('Gaji ditandai sudah dibayar')->success()->send();
                     }),
-                EditAction::make(),
+                EditAction::make()
+                    ->using(function (PayrollItem $record, array $data): PayrollItem {
+                        $baseBruto            = (float) $record->total_bruto - (float) ($record->bonus ?? 0) - (float) ($record->lembur ?? 0);
+                        $bonus                = (float) ($data['bonus'] ?? 0);
+                        $lembur               = (float) ($data['lembur'] ?? 0);
+                        $potonganLain         = (float) ($data['potongan_lain'] ?? 0);
+                        $data['total_bruto']  = max(0, $baseBruto + $bonus + $lembur);
+                        $data['total_bersih'] = max(0, $data['total_bruto'] - (float) $record->potongan_kasbon - $potonganLain);
+
+                        $record->update($data);
+
+                        return $record;
+                    }),
             ])
             ->bulkActions([
                 BulkActionGroup::make([

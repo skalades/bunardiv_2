@@ -258,6 +258,18 @@
                                     <td class="amount-col">Rp {{ number_format($item->tunjangan_makan, 0, ',', '.') }}</td>
                                 </tr>
                             @endif
+                            @if($item->bonus > 0)
+                                <tr>
+                                    <td>Bonus</td>
+                                    <td class="amount-col">Rp {{ number_format($item->bonus, 0, ',', '.') }}</td>
+                                </tr>
+                            @endif
+                            @if($item->lembur > 0)
+                                <tr>
+                                    <td>Uang Lembur</td>
+                                    <td class="amount-col">Rp {{ number_format($item->lembur, 0, ',', '.') }}</td>
+                                </tr>
+                            @endif
                             <tr style="background: #fafafa; font-weight: bold;">
                                 <td><strong>Total Penerimaan Bruto</strong></td>
                                 <td class="amount-col"><strong>Rp {{ number_format($item->total_bruto, 0, ',', '.') }}</strong></td>

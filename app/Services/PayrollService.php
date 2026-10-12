@@ -77,6 +77,8 @@ class PayrollService
                     'tipe_karyawan'      => $profile->tipe,
                     'jumlah_hari_hadir'  => $jumlahHari,
                     'jumlah_event_hadir' => $jumlahEvent,
+                    'bonus'              => 0,
+                    'lembur'             => 0,
                     'potongan_kasbon'    => 0,
                     'potongan_lain'      => 0,
                     'status'             => 'draft',
@@ -159,6 +161,8 @@ class PayrollService
 
                 $item['tipe_karyawan']       = $profile->tipe;
                 $item['gaji_pokok']          = $profile->gaji_pokok;
+                $item['bonus']               = 0;
+                $item['lembur']              = 0;
                 $item['tunjangan_transport'] = $profile->tunjangan_transport;
                 $item['tunjangan_makan']     = $profile->tunjangan_makan;
 

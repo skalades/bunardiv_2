@@ -259,4 +259,66 @@ class HrmPayrollWorkflowTest extends TestCase
         $this->assertEquals(19000, (float) $item->total_bruto - 171000); // 190.000 total
         $this->assertEquals(190000, (float) $item->total_bersih);
     }
+
+    public function test_bonus_and_lembur_can_be_added_to_payroll_item(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $payroll = Payroll::create([
+            'tipe_periode' => 'harian',
+            'tanggal'      => '2026-10-12',
+            'status'       => 'draft',
+            'dibuat_oleh'  => $admin->id,
+        ]);
+
+        $user = User::factory()->create(['name' => 'Karyawan Bonus Test']);
+        EmployeeProfile::create([
+            'user_id'      => $user->id,
+            'nik'          => 'BONUS-01',
+            'tipe'         => 'harian',
+            'gaji_pokok'   => 150000,
+            'status_aktif' => true,
+        ]);
+
+        $item = PayrollItem::create([
+            'payroll_id'          => $payroll->id,
+            'user_id'             => $user->id,
+            'tipe_karyawan'       => 'harian',
+            'gaji_pokok'          => 150000,
+            'upah_event'          => 150000,
+            'tunjangan_transport' => 20000,
+            'tunjangan_makan'     => 30000,
+            'bonus'               => 0,
+            'lembur'              => 0,
+            'potongan_kasbon'     => 0,
+            'potongan_lain'       => 0,
+            'total_bruto'         => 200000, // 150k + 20k + 30k
+            'total_bersih'        => 200000,
+            'status'              => 'draft',
+        ]);
+
+        $this->actingAs($admin);
+
+        \Livewire\Livewire::test(\App\Filament\Resources\PayrollResource\RelationManagers\ItemsRelationManager::class, [
+            'ownerRecord' => $payroll,
+            'pageClass'   => \App\Filament\Resources\PayrollResource\Pages\EditPayroll::class,
+        ])
+            ->callTableAction('edit', $item, [
+                'bonus'         => 50000,
+                'lembur'        => 30000,
+                'potongan_lain' => 10000,
+            ])
+            ->assertHasNoErrors();
+
+        $item->refresh();
+        $this->assertEquals(50000, (float) $item->bonus);
+        $this->assertEquals(30000, (float) $item->lembur);
+        $this->assertEquals(10000, (float) $item->potongan_lain);
+        $this->assertEquals(280000, (float) $item->total_bruto); // 200k base + 50k bonus + 30k lembur
+        $this->assertEquals(270000, (float) $item->total_bersih); // 280k - 10k potongan lain
+
+        // Slip gaji PDF stream with bonus and lembur
+        $response = $this->get(route('payroll.slip', $item));
+        $response->assertStatus(200);
+        $response->assertHeader('content-type', 'application/pdf');
+    }
 }
