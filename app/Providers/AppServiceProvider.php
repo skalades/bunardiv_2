@@ -19,6 +19,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Filament\Forms\Components\TextInput::macro('currencyIdr', function (string $prefix = 'Rp', int $precision = 0) {
+            /** @var \Filament\Forms\Components\TextInput $this */
+            return $this
+                ->prefix($prefix)
+                ->mask(\Filament\Support\RawJs::make('$money($input, \',\', \'.\', ' . $precision . ')'))
+                ->stripCharacters('.')
+                ->numeric();
+        });
     }
 }

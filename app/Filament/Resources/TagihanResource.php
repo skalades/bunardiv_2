@@ -87,14 +87,13 @@ class TagihanResource extends Resource
                             ->live(debounce: 500)
                             ->afterStateUpdated(function ($set, $state, Order $record) {
                                 if ($state) {
-                                    $set('nominal_tagihan', ($record->total * $state) / 100);
+                                    $set('nominal_tagihan', round(($record->total * $state) / 100));
                                 }
                             }),
                         TextInput::make('nominal_tagihan')
-                            ->label('Nominal Tagihan (Rp)')
-                            ->numeric()
+                            ->label('Nominal Tagihan')
+                            ->currencyIdr()
                             ->required()
-                            ->prefix('Rp')
                             ->default(fn (Order $record) => $record->total)
                             ->live(debounce: 500)
                             ->afterStateUpdated(function ($set, $state, Order $record) {
@@ -112,7 +111,7 @@ class TagihanResource extends Resource
                             'setting' => $setting,
                             'judul_tagihan' => $data['judul_tagihan'],
                             'nominal_tagihan' => $data['nominal_tagihan']
-                        ]);
+                        ])->setPaper('a4', 'portrait');
                         
                         return response()->streamDownload(function () use ($pdf) {
                             echo $pdf->output();
@@ -131,10 +130,9 @@ class TagihanResource extends Resource
                     ->form([
                         TextInput::make('amount')
                             ->label('Jumlah Bayar')
+                            ->currencyIdr()
                             ->required()
-                            ->numeric()
-                            ->prefix('Rp')
-                            ->default(fn (Order $record) => $record->total - $record->payments()->sum('amount')),
+                            ->default(fn (Order $record) => round($record->total - $record->payments()->sum('amount'))),
                         TextInput::make('payment_method')
                             ->label('Metode Pembayaran')
                             ->required(),

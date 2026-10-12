@@ -19,7 +19,7 @@
         
         .info-table { width: 100%; margin-bottom: 25px; border-collapse: collapse; }
         .info-table td { vertical-align: top; border: none; padding: 0; }
-        .info-box { background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; padding: 12px; height: 100%; }
+        .info-box { background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; padding: 12px; }
         .info-box-title { font-size: 12px; font-weight: bold; color: #7f8c8d; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
         .info-row { margin-bottom: 5px; display: table; width: 100%; }
         .info-label { display: table-cell; width: 110px; font-weight: bold; font-size: 12px; color: #34495e; }

@@ -19,7 +19,7 @@ class PdfController extends Controller
         $pdf = Pdf::loadView('pdf.invoice', [
             'order' => $order,
             'setting' => $setting
-        ]);
+        ])->setPaper('a4', 'portrait');
         
         return $pdf->stream('invoice-'.$order->no_order.'.pdf');
     }

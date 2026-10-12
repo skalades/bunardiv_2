@@ -46,13 +46,18 @@
             }
         },
         
+        parseAmount(val) {
+            if (!val) return 0;
+            return parseFloat(String(val).replaceAll('.', '').replace(',', '.')) || 0;
+        },
+
         updateDiskon(val) {
-            this.diskon = parseFloat(val) || 0;
+            this.diskon = this.parseAmount(val);
             this.syncFilamentFields();
         },
         
         updateBiaya(val) {
-            this.biayaTambahan = parseFloat(val) || 0;
+            this.biayaTambahan = this.parseAmount(val);
             this.syncFilamentFields();
         },
 
@@ -84,8 +89,8 @@
             setTimeout(() => {
                 const dInput = document.querySelector('input[wire\\:model$=\'.diskon\']');
                 const bInput = document.querySelector('input[wire\\:model$=\'.biaya_tambahan\']');
-                if (dInput) this.diskon = parseFloat(dInput.value) || 0;
-                if (bInput) this.biayaTambahan = parseFloat(bInput.value) || 0;
+                if (dInput) this.diskon = this.parseAmount(dInput.value);
+                if (bInput) this.biayaTambahan = this.parseAmount(bInput.value);
             }, 500);
         }
      }" 

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\Invoices;
+namespace App\Filament\Resources;
 
-use App\Filament\Resources\Invoices\Pages\ManageInvoices;
+use App\Filament\Resources\InvoiceResource\Pages\ManageInvoices;
 use App\Models\Invoice;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
@@ -36,10 +36,12 @@ class InvoiceResource extends Resource
                 TextInput::make('order_id')
                     ->required()
                     ->numeric(),
-                TextInput::make('judul_tagihan'),
+                TextInput::make('judul_tagihan')
+                    ->label('Keterangan Tagihan'),
                 TextInput::make('nominal_tagihan')
-                    ->required()
-                    ->numeric(),
+                    ->label('Nominal Tagihan')
+                    ->currencyIdr()
+                    ->required(),
                 DatePicker::make('jatuh_tempo'),
             ]);
     }
@@ -54,7 +56,8 @@ class InvoiceResource extends Resource
                 TextEntry::make('judul_tagihan')
                     ->placeholder('-'),
                 TextEntry::make('nominal_tagihan')
-                    ->numeric(),
+                    ->label('Nominal Tagihan')
+                    ->money('idr'),
                 TextEntry::make('jatuh_tempo')
                     ->date()
                     ->placeholder('-'),
@@ -80,7 +83,8 @@ class InvoiceResource extends Resource
                 TextColumn::make('judul_tagihan')
                     ->searchable(),
                 TextColumn::make('nominal_tagihan')
-                    ->numeric()
+                    ->label('Nominal Tagihan')
+                    ->money('idr')
                     ->sortable(),
                 TextColumn::make('jatuh_tempo')
                     ->date()

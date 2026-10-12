@@ -132,16 +132,14 @@ class OrderResource extends Resource
                         Hidden::make('total')->default(0)->extraAttributes(['class' => 'total-input']),
                         
                         TextInput::make('diskon')
-                            ->numeric()
-                            ->default(0)
-                            ->prefix('Rp')
                             ->label('Diskon')
+                            ->currencyIdr()
+                            ->default(0)
                             ->extraInputAttributes(['x-on:input.debounce.500ms' => '$dispatch(\'update-diskon\', $el.value)']),
                         TextInput::make('biaya_tambahan')
-                            ->numeric()
-                            ->default(0)
-                            ->prefix('Rp')
                             ->label('Biaya Tambahan')
+                            ->currencyIdr()
+                            ->default(0)
                             ->extraInputAttributes(['x-on:input.debounce.500ms' => '$dispatch(\'update-biaya\', $el.value)']),
                     ])
                     ->columnSpan([

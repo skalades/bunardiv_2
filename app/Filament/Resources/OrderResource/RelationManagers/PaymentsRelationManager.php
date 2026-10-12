@@ -29,9 +29,8 @@ class PaymentsRelationManager extends RelationManager
             ->components([
                 TextInput::make('amount')
                     ->label('Jumlah Bayar')
-                    ->required()
-                    ->numeric()
-                    ->prefix('Rp'),
+                    ->currencyIdr()
+                    ->required(),
                 TextInput::make('payment_method')
                     ->label('Metode Pembayaran (Cash, Transfer, dll)')
                     ->required(),
