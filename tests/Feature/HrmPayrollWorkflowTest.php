@@ -175,4 +175,28 @@ class HrmPayrollWorkflowTest extends TestCase
 
         $this->assertTrue(Attendance::where('user_id', $user->id)->whereDate('tanggal', now()->toDateString())->where('status', 'hadir')->exists());
     }
+
+    public function test_super_admin_can_bulk_attend_employees(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+
+        EmployeeProfile::create(['user_id' => $user1->id, 'status_aktif' => true, 'tipe' => 'bulanan']);
+        EmployeeProfile::create(['user_id' => $user2->id, 'status_aktif' => true, 'tipe' => 'harian']);
+
+        $this->actingAs($admin);
+
+        \Livewire\Livewire::test(\App\Filament\Resources\AbsensiResource\Pages\ListAbsensis::class)
+            ->callAction('bulk_attendance', [
+                'tanggal'    => '2026-10-15',
+                'status'     => 'hadir',
+                'user_ids'   => [$user1->id, $user2->id],
+                'keterangan' => 'Bulk attendance test',
+            ])
+            ->assertHasNoErrors();
+
+        $this->assertTrue(Attendance::where('user_id', $user1->id)->whereDate('tanggal', '2026-10-15')->where('status', 'hadir')->exists());
+        $this->assertTrue(Attendance::where('user_id', $user2->id)->whereDate('tanggal', '2026-10-15')->where('status', 'hadir')->exists());
+    }
 }

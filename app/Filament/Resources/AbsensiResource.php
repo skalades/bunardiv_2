@@ -152,6 +152,31 @@ class AbsensiResource extends Resource
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    \Filament\Actions\BulkAction::make('set_hadir')
+                        ->label('Tandai Hadir')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            $records->each->update(['status' => 'hadir', 'dicatat_oleh' => auth()->id()]);
+                            \Filament\Notifications\Notification::make()->title('Semua data terpilih diubah menjadi Hadir')->success()->send();
+                        }),
+                    \Filament\Actions\BulkAction::make('set_izin')
+                        ->label('Tandai Izin')
+                        ->icon('heroicon-o-clock')
+                        ->color('warning')
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            $records->each->update(['status' => 'izin', 'dicatat_oleh' => auth()->id()]);
+                            \Filament\Notifications\Notification::make()->title('Semua data terpilih diubah menjadi Izin')->warning()->send();
+                        }),
+                    \Filament\Actions\BulkAction::make('set_alpha')
+                        ->label('Tandai Alpha')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            $records->each->update(['status' => 'alpha', 'dicatat_oleh' => auth()->id()]);
+                            \Filament\Notifications\Notification::make()->title('Semua data terpilih diubah menjadi Alpha')->danger()->send();
+                        }),
                     DeleteBulkAction::make(),
                 ]),
             ]);
