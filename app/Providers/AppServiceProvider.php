@@ -24,6 +24,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Illuminate\Support\Number::useLocale('id');
+        \Illuminate\Support\Number::useCurrency('IDR');
+
+        \Filament\Tables\Table::configureUsing(function (\Filament\Tables\Table $table) {
+            $table->defaultNumberLocale('id')->defaultCurrency('idr');
+        });
+
+        \Filament\Schemas\Schema::configureUsing(function (\Filament\Schemas\Schema $schema) {
+            $schema->defaultNumberLocale('id')->defaultCurrency('idr');
+        });
+
         \Filament\Forms\Components\TextInput::macro('currencyIdr', function (string $prefix = 'Rp', int $precision = 0) {
             /** @var \Filament\Forms\Components\TextInput $this */
             return $this

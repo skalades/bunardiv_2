@@ -117,4 +117,33 @@ class NominalCurrencyFormattingTest extends TestCase
         $schema->fill(['jumlah_bayar' => null]);
         $this->assertNull($livewire->data['jumlah_bayar']);
     }
+
+    public function test_system_wide_currency_uses_dot_thousands_separator(): void
+    {
+        $formatted = \Illuminate\Support\Number::currency(1500000, 'IDR');
+
+        // Verify thousand separator is dot '.' (e.g. 1.500.000)
+        $this->assertStringContainsString('1.500.000', $formatted);
+        // Verify it doesn't use English comma thousand separator
+        $this->assertStringNotContainsString('1,500,000', $formatted);
+    }
+
+    public function test_table_money_column_uses_dot_thousands_separator(): void
+    {
+        $livewire = new class extends Component implements \Filament\Tables\Contracts\HasTable {
+            use \Filament\Tables\Concerns\InteractsWithTable;
+            public function makeFilamentTranslatableContentDriver(): ?\Filament\Support\Contracts\TranslatableContentDriver { return null; }
+            public function render() { return '<div></div>'; }
+        };
+
+        $table = \Filament\Tables\Table::make($livewire);
+        $column = \Filament\Tables\Columns\TextColumn::make('total')->money('idr')->table($table);
+
+        $formatted = $column->formatState(25000000);
+
+        // Must contain '25.000.000' with dot separator, never '25,000,000'
+        $this->assertStringContainsString('25.000.000', $formatted);
+        $this->assertStringNotContainsString('25,000,000', $formatted);
+    }
 }
+
