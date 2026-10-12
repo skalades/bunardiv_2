@@ -93,7 +93,12 @@
                 <td class="label-col">Untuk Pembayaran</td>
                 <td class="colon-col">:</td>
                 <td class="value-col">
-                    <span class="dotted-line">Pesanan <strong>{{ $payment->order->nama_acara }}</strong> (No. Order: {{ $payment->order->no_order }})</span>
+                    <span class="dotted-line">
+                        @if($payment->invoice)
+                            <strong>{{ $payment->invoice->judul_tagihan ?: 'Invoice' }} ({{ $payment->invoice->no_invoice }})</strong> - 
+                        @endif
+                        Pesanan <strong>{{ $payment->order->nama_acara }}</strong> (No. Order: {{ $payment->order->no_order }})
+                    </span>
                 </td>
             </tr>
             <tr>

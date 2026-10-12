@@ -14,7 +14,9 @@ use Filament\Tables\Columns\TextColumn;
 use App\Filament\Resources\TagihanResource\Pages;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use App\Models\Invoice;
 use Illuminate\Support\Facades\DB;
 
 class TagihanResource extends Resource
@@ -109,9 +111,18 @@ class TagihanResource extends Resource
                             }),
                     ])
                     ->action(function (Order $record, array $data) {
-                        $record->load(['customer', 'items.product', 'payments']);
+                        $record->load(['customer', 'items.product', 'payments', 'invoices']);
                         $setting = \App\Models\Setting::first();
                         
+                        $count = $record->invoices()->count() + 1;
+                        $noInvoice = 'INV-' . $record->no_order . '-DP' . $count;
+                        $record->invoices()->create([
+                            'no_invoice'      => $noInvoice,
+                            'judul_tagihan'   => $data['judul_tagihan'],
+                            'nominal_tagihan' => $data['nominal_tagihan'],
+                            'jatuh_tempo'     => now()->addDays(7),
+                        ]);
+
                         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice_dynamic', [
                             'order' => $record,
                             'setting' => $setting,
@@ -119,14 +130,24 @@ class TagihanResource extends Resource
                             'nominal_tagihan' => $data['nominal_tagihan']
                         ])->setPaper('a4', 'portrait');
                         
-                        return response()->streamDownload(function () use ($pdf) {
+                        return response()->streamDownload(function () use ($pdf, $data, $record) {
                             echo $pdf->output();
                         }, 'Invoice-'.$data['judul_tagihan'].'-'.$record->no_order.'.pdf');
                     }),
                 \Filament\Actions\Action::make('print_invoice')
                     ->label('Invoice')
                     ->icon('heroicon-o-document-text')
-                    ->url(fn (Order $record) => route('invoice.download', $record))
+                    ->url(function (Order $record) {
+                        $record->invoices()->firstOrCreate(
+                            ['no_invoice' => 'INV-' . $record->no_order],
+                            [
+                                'judul_tagihan'   => 'Tagihan Pesanan ' . $record->no_order,
+                                'nominal_tagihan' => $record->total,
+                                'jatuh_tempo'     => $record->tanggal ?? now(),
+                            ]
+                        );
+                        return route('invoice.download', $record);
+                    })
                     ->openUrlInNewTab(),
                 
                 \Filament\Actions\Action::make('add_payment')
@@ -134,13 +155,73 @@ class TagihanResource extends Resource
                     ->icon('heroicon-o-currency-dollar')
                     ->color('success')
                     ->form([
+                        Select::make('invoice_id')
+                            ->label('Invoice Terkait')
+                            ->options(function (Order $record) {
+                                $record->loadMissing('invoices');
+                                if ($record->invoices->isEmpty()) {
+                                    $mainInv = $record->invoices()->firstOrCreate(
+                                        ['no_invoice' => 'INV-' . $record->no_order],
+                                        [
+                                            'judul_tagihan'   => 'Tagihan Pesanan ' . $record->no_order,
+                                            'nominal_tagihan' => $record->total,
+                                            'jatuh_tempo'     => $record->tanggal ?? now(),
+                                        ]
+                                    );
+                                    return [$mainInv->id => "{$mainInv->no_invoice} - {$mainInv->judul_tagihan} (Rp " . number_format($mainInv->nominal_tagihan, 0, ',', '.') . ")"];
+                                }
+
+                                return $record->invoices->mapWithKeys(function ($inv) {
+                                    return [$inv->id => "{$inv->no_invoice} - " . ($inv->judul_tagihan ?: 'Tagihan') . " (Rp " . number_format($inv->nominal_tagihan, 0, ',', '.') . ")"];
+                                });
+                            })
+                            ->default(function (Order $record) {
+                                $record->loadMissing('invoices');
+                                if ($record->invoices->isEmpty()) {
+                                    $mainInv = $record->invoices()->firstOrCreate(
+                                        ['no_invoice' => 'INV-' . $record->no_order],
+                                        [
+                                            'judul_tagihan'   => 'Tagihan Pesanan ' . $record->no_order,
+                                            'nominal_tagihan' => $record->total,
+                                            'jatuh_tempo'     => $record->tanggal ?? now(),
+                                        ]
+                                    );
+                                    return $mainInv->id;
+                                }
+                                return $record->invoices->last()?->id;
+                            })
+                            ->live()
+                            ->afterStateUpdated(function ($set, $state) {
+                                if ($state) {
+                                    $inv = Invoice::find($state);
+                                    if ($inv) {
+                                        $paidForInv = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
+                                        $sisaInv = max(0, $inv->nominal_tagihan - $paidForInv);
+                                        if ($sisaInv > 0) {
+                                            $set('amount', round($sisaInv));
+                                        }
+                                    }
+                                }
+                            })
+                            ->required()
+                            ->searchable(),
                         TextInput::make('amount')
                             ->label('Jumlah Bayar')
                             ->currencyIdr()
                             ->required()
                             ->default(fn (Order $record) => round($record->total - $record->payments()->sum('amount'))),
-                        TextInput::make('payment_method')
+                        Select::make('payment_method')
                             ->label('Metode Pembayaran')
+                            ->options([
+                                'Transfer BCA'     => 'Transfer BCA',
+                                'Transfer Mandiri' => 'Transfer Mandiri',
+                                'Transfer BRI'     => 'Transfer BRI',
+                                'Tunai / Cash'     => 'Tunai / Cash',
+                                'QRIS / E-Wallet'  => 'QRIS / E-Wallet',
+                                'Kartu Kredit'     => 'Kartu Kredit',
+                                'Lainnya'          => 'Lainnya',
+                            ])
+                            ->default('Transfer BCA')
                             ->required(),
                         DatePicker::make('payment_date')
                             ->label('Tanggal Pembayaran')

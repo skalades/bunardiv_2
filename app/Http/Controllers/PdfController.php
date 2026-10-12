@@ -26,7 +26,7 @@ class PdfController extends Controller
 
     public function receipt(Payment $payment)
     {
-        $payment->load('order.customer');
+        $payment->load(['order.customer', 'invoice']);
         $setting = Setting::first();
         
         $pdf = Pdf::loadView('pdf.receipt', [

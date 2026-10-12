@@ -11,6 +11,7 @@ use Filament\Actions\DissociateAction;
 use Filament\Actions\DissociateBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -27,12 +28,46 @@ class PaymentsRelationManager extends RelationManager
     {
         return $schema
             ->components([
+                Select::make('invoice_id')
+                    ->label('Invoice Terkait')
+                    ->options(function ($livewire) {
+                        $order = $livewire->getOwnerRecord();
+                        if (! $order) return [];
+                        $order->loadMissing('invoices');
+                        if ($order->invoices->isEmpty()) {
+                            $mainInv = $order->invoices()->firstOrCreate(
+                                ['no_invoice' => 'INV-' . $order->no_order],
+                                [
+                                    'judul_tagihan'   => 'Tagihan Pesanan ' . $order->no_order,
+                                    'nominal_tagihan' => $order->total,
+                                    'jatuh_tempo'     => $order->tanggal ?? now(),
+                                ]
+                            );
+                            return [$mainInv->id => "{$mainInv->no_invoice} - {$mainInv->judul_tagihan} (Rp " . number_format($mainInv->nominal_tagihan, 0, ',', '.') . ")"];
+                        }
+                        return $order->invoices->mapWithKeys(fn ($inv) => [
+                            $inv->id => "{$inv->no_invoice} - " . ($inv->judul_tagihan ?: 'Tagihan') . " (Rp " . number_format($inv->nominal_tagihan, 0, ',', '.') . ")"
+                        ]);
+                    })
+                    ->default(fn ($livewire) => $livewire->getOwnerRecord()?->invoices?->last()?->id)
+                    ->searchable()
+                    ->required(),
                 TextInput::make('amount')
                     ->label('Jumlah Bayar')
                     ->currencyIdr()
                     ->required(),
-                TextInput::make('payment_method')
-                    ->label('Metode Pembayaran (Cash, Transfer, dll)')
+                Select::make('payment_method')
+                    ->label('Metode Pembayaran')
+                    ->options([
+                        'Transfer BCA'     => 'Transfer BCA',
+                        'Transfer Mandiri' => 'Transfer Mandiri',
+                        'Transfer BRI'     => 'Transfer BRI',
+                        'Tunai / Cash'     => 'Tunai / Cash',
+                        'QRIS / E-Wallet'  => 'QRIS / E-Wallet',
+                        'Kartu Kredit'     => 'Kartu Kredit',
+                        'Lainnya'          => 'Lainnya',
+                    ])
+                    ->default('Transfer BCA')
                     ->required(),
                 DatePicker::make('payment_date')
                     ->label('Tanggal Pembayaran')
@@ -59,6 +94,11 @@ class PaymentsRelationManager extends RelationManager
                 TextColumn::make('reference_number')
                     ->label('No. Referensi')
                     ->searchable(),
+                TextColumn::make('invoice.no_invoice')
+                    ->label('Invoice')
+                    ->badge()
+                    ->color('info')
+                    ->placeholder('-'),
                 TextColumn::make('payment_method')
                     ->label('Metode')
                     ->searchable(),
