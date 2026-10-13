@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\OrderResource\RelationManagers;
 
+use App\Models\Invoice;
+use App\Models\Payment;
 use Filament\Actions\AssociateAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
