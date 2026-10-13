@@ -167,17 +167,45 @@
     </style>
 </head>
 <body>
+    @php
+        $setting = $setting ?? \App\Models\Setting::getSettings();
+        $logoPath = $setting->getLogoPath();
+        $companyName = $setting->company_name ?: 'N7 DECORATION & CATERING BU NARDI';
+        $companyAddress = $setting->company_address ?: 'Basecamp Logistik & Dapur Utama, Jakarta Barat';
+        $companyPhone = $setting->company_phone ?: '0812-8899-7700';
+        $companyEmail = $setting->company_email ?: 'operasional@n7bunardi.com';
+        $bankAccounts = $setting->getFormattedBankAccounts();
+        $primaryBank = !empty($bankAccounts) ? $bankAccounts[0] : null;
+    @endphp
+
     <div class="container">
         <table class="header-table">
             <tr>
-                <td style="width: 55%;">
-                    <div class="company-name">{{ $setting ? $setting->company_name : 'N7 DECORATION & CATERING' }}</div>
-                    <div class="company-contact">
-                        {{ $setting ? $setting->company_address : 'Yogyakarta' }}<br>
-                        Telp/WA: {{ $setting ? $setting->company_phone : '-' }}
-                    </div>
+                <td style="width: 58%; vertical-align: middle;">
+                    @if($logoPath && file_exists($logoPath))
+                        <table style="border: none; width: 100%;">
+                            <tr>
+                                <td style="width: 55px; vertical-align: middle; border: none; padding: 0;">
+                                    <img src="{{ $logoPath }}" alt="Logo" style="max-height: 45px; max-width: 50px; object-fit: contain;">
+                                </td>
+                                <td style="vertical-align: middle; border: none; padding-left: 8px;">
+                                    <div class="company-name">{{ $companyName }}</div>
+                                    <div class="company-contact">
+                                        {{ $companyAddress }}<br>
+                                        Telp/WA: {{ $companyPhone }} @if($companyEmail)| Email: {{ $companyEmail }}@endif
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    @else
+                        <div class="company-name">{{ $companyName }}</div>
+                        <div class="company-contact">
+                            {{ $companyAddress }}<br>
+                            Telp/WA: {{ $companyPhone }} @if($companyEmail)| Email: {{ $companyEmail }}@endif
+                        </div>
+                    @endif
                 </td>
-                <td style="width: 45%;">
+                <td style="width: 42%; vertical-align: middle;">
                     <div class="doc-title">SLIP GAJI</div>
                     <div class="doc-subtitle">Periode: {{ $payroll->nama_bulan }}</div>
                 </td>
@@ -321,8 +349,13 @@
             <tr>
                 <td style="width: 50%;">
                     @if($item->catatan)
-                        <div style="font-size: 10px; color: #7f8c8d; font-style: italic;">
+                        <div style="font-size: 10px; color: #7f8c8d; font-style: italic; margin-bottom: 3px;">
                             Catatan: {{ $item->catatan }}
+                        </div>
+                    @endif
+                    @if($primaryBank)
+                        <div style="font-size: 9.5px; color: #64748b;">
+                            Rekening Operasional Penggajian: <b>{{ $primaryBank['bank_name'] }} - {{ $primaryBank['account_number'] }}</b> (a.n {{ $primaryBank['account_name'] }})
                         </div>
                     @endif
                 </td>
@@ -346,7 +379,7 @@
                 <td>
                     <div class="signature-title">Disetujui oleh HRD / Keuangan,</div>
                     <div class="signature-line"></div>
-                    <div class="signature-name">{{ $setting ? $setting->company_name : 'N7 Decoration' }}</div>
+                    <div class="signature-name">{{ $companyName }}</div>
                 </td>
             </tr>
         </table>

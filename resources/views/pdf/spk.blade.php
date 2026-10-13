@@ -45,19 +45,30 @@
     </style>
 </head>
 <body>
+    @php
+        $setting = $setting ?? \App\Models\Setting::getSettings();
+        $logoPath = $setting->getLogoPath();
+        $companyName = $setting->company_name ?: 'N7 DECORATION & CATERING BU NARDI';
+        $companyAddress = $setting->company_address ?: 'Basecamp Logistik & Dapur Utama, Jakarta Barat';
+        $companyPhone = $setting->company_phone ?: '0812-8899-7700';
+        $companyEmail = $setting->company_email ?: 'operasional@n7bunardi.com';
+    @endphp
+
     <table class="header-table">
         <tr>
             <td class="header-logo">
-                @if($setting && $setting->company_logo)
-                    <img src="{{ public_path('storage/'.$setting->company_logo) }}" alt="Logo">
+                @if($logoPath && file_exists($logoPath))
+                    <img src="{{ $logoPath }}" alt="Logo">
+                @else
+                    <div style="background-color: #2c3e50; color: #facc15; font-weight: 900; font-size: 16px; padding: 10px 18px; border-radius: 4px; display: inline-block;">N7</div>
                 @endif
             </td>
             <td class="header-info">
-                <div class="company-name">{{ $setting ? $setting->company_name : 'NAMA PERUSAHAAN' }}</div>
+                <div class="company-name">{{ $companyName }}</div>
                 <div class="company-contact">
-                    {{ $setting ? $setting->company_address : 'Alamat Perusahaan' }}<br>
-                    Telp: {{ $setting ? $setting->company_phone : '-' }} 
-                    @if($setting && $setting->company_email) | Email: {{ $setting->company_email }} @endif
+                    {{ $companyAddress }}<br>
+                    Telp/WA: {{ $companyPhone }} 
+                    @if($companyEmail) | Email: {{ $companyEmail }} @endif
                 </div>
             </td>
         </tr>
@@ -127,7 +138,8 @@
             <td>
                 <div class="signature-title">Disetujui Oleh,</div>
                 <div class="signature-line"></div>
-                <div class="signature-name">Manajemen / Operasional</div>
+                <div class="signature-name">{{ $companyName }}</div>
+                <div style="font-size: 10px; color: #7f8c8d;">Manajemen Operasional</div>
             </td>
             <td>
                 <!-- Kolom Kosong Tengah -->
@@ -135,7 +147,8 @@
             <td>
                 <div class="signature-title">Diterima Oleh,</div>
                 <div class="signature-line"></div>
-                <div class="signature-name">PIC / Koor. Lapangan</div>
+                <div class="signature-name">{{ $workOrder->pic ? $workOrder->pic->name : 'PIC / Koordinator Lapangan' }}</div>
+                <div style="font-size: 10px; color: #7f8c8d;">Penanggung Jawab Lapangan</div>
             </td>
         </tr>
     </table>

@@ -16,7 +16,7 @@ class PdfController extends Controller
     public function invoice(Order $order)
     {
         $order->load(['customer', 'items.product', 'payments']);
-        $setting = Setting::first();
+        $setting = Setting::getSettings();
         
         $pdf = Pdf::loadView('pdf.invoice', [
             'order' => $order,
@@ -29,7 +29,7 @@ class PdfController extends Controller
     public function receipt(Payment $payment)
     {
         $payment->load(['order.customer', 'invoice']);
-        $setting = Setting::first();
+        $setting = Setting::getSettings();
         
         $pdf = Pdf::loadView('pdf.receipt', [
             'payment' => $payment,
@@ -42,7 +42,7 @@ class PdfController extends Controller
     public function spk(\App\Models\WorkOrder $workOrder)
     {
         $workOrder->load(['order.customer', 'pic', 'users.user', 'equipment.inventory']);
-        $setting = Setting::first();
+        $setting = Setting::getSettings();
         
         $pdf = Pdf::loadView('pdf.spk', [
             'workOrder' => $workOrder,
@@ -55,7 +55,7 @@ class PdfController extends Controller
     public function suratJalan(\App\Models\WorkOrder $workOrder)
     {
         $workOrder->load(['order.customer', 'pic', 'users.user', 'equipment.inventory']);
-        $setting = Setting::first();
+        $setting = Setting::getSettings();
         
         $pdf = Pdf::loadView('pdf.surat-jalan', [
             'workOrder' => $workOrder,
@@ -68,7 +68,7 @@ class PdfController extends Controller
     public function slipGaji(\App\Models\PayrollItem $payrollItem)
     {
         $payrollItem->load(['user.employeeProfile', 'payroll']);
-        $setting = Setting::first();
+        $setting = Setting::getSettings();
 
         $pdf = Pdf::loadView('pdf.slip-gaji', [
             'item'    => $payrollItem,
@@ -86,15 +86,18 @@ class PdfController extends Controller
         $month = $request->query('month') ?? 'all';
         $viewMode = $request->query('viewMode') ?? 'kas';
 
-        $setting = Setting::first();
+        $setting = Setting::getSettings();
 
-        // 1. Order (Omzet Nilai Kontrak)
-        $orderQuery = Order::query()->whereYear('tanggal', $year);
+        // 1. Order (Omzet Nilai Kontrak) & Daftar Pesanan Periode Ini
+        $ordersQuery = Order::query()
+            ->with(['customer', 'payments'])
+            ->whereYear('tanggal', $year);
         if ($month !== 'all') {
-            $orderQuery->whereMonth('tanggal', (int) $month);
+            $ordersQuery->whereMonth('tanggal', (int) $month);
         }
-        $totalNilaiOrder = (float) $orderQuery->sum('total');
-        $totalOrderCount = $orderQuery->count();
+        $orders = $ordersQuery->orderBy('tanggal', 'asc')->get();
+        $totalNilaiOrder = (float) $orders->sum('total');
+        $totalOrderCount = $orders->count();
 
         // 2. Pembayaran Kas Masuk (Real Cash-in)
         $paymentQuery = Payment::query()->whereYear('payment_date', $year);
@@ -106,36 +109,40 @@ class PdfController extends Controller
         // 3. Piutang Pelanggan
         $piutangBerjalan = max(0, $totalNilaiOrder - $totalKasMasuk);
 
-        // 4. Beban Pengeluaran Operasional
+        // 4. Beban Pengeluaran Operasional (Detail & Agregasi Kategori)
         $expenseQuery = Expense::query()->whereYear('tanggal', $year);
         if ($month !== 'all') {
             $expenseQuery->whereMonth('tanggal', (int) $month);
         }
-        $totalBebanOperasional = (float) $expenseQuery->sum('nominal');
+        $allExpenses = (clone $expenseQuery)->orderBy('tanggal', 'asc')->get();
+        $totalBebanOperasional = (float) $allExpenses->sum('nominal');
 
-        $expenseBreakdown = $expenseQuery->selectRaw('kategori, sum(nominal) as total')
+        $expenseBreakdown = (clone $expenseQuery)->selectRaw('kategori, count(*) as count, sum(nominal) as total')
             ->groupBy('kategori')
             ->orderBy('total', 'desc')
             ->get();
 
         // 5. Beban Penggajian (Payroll)
-        $payrollQuery = \App\Models\PayrollItem::whereHas('payroll', function ($q) use ($year, $month) {
-            $q->whereYear('created_at', $year);
-            if ($month !== 'all') {
-                $q->whereMonth('created_at', (int) $month);
-            }
-        });
-        $totalBebanPayroll = (float) $payrollQuery->sum('total_bersih');
+        $payrollQuery = \App\Models\PayrollItem::with(['user', 'payroll'])
+            ->whereHas('payroll', function ($q) use ($year, $month) {
+                $q->whereYear('created_at', $year);
+                if ($month !== 'all') {
+                    $q->whereMonth('created_at', (int) $month);
+                }
+            });
+        $payrollItems = $payrollQuery->get();
+        $totalBebanPayroll = (float) $payrollItems->sum('total_bersih');
 
-        // Total Beban & Laba
+        // Total Beban, Laba, dan Indikator Kinerja Keuangan
         $totalBeban = $totalBebanOperasional + $totalBebanPayroll;
         $pendapatanAcuan = $viewMode === 'kas' ? $totalKasMasuk : $totalNilaiOrder;
         $labaBersih = $pendapatanAcuan - $totalBeban;
         $profitMargin = $pendapatanAcuan > 0 ? round(($labaBersih / $pendapatanAcuan) * 100, 1) : 0;
         $collectionRate = $totalNilaiOrder > 0 ? round(($totalKasMasuk / $totalNilaiOrder) * 100, 1) : 0;
         $expenseRatio = $pendapatanAcuan > 0 ? round(($totalBeban / $pendapatanAcuan) * 100, 1) : 0;
+        $netCashFlow = $totalKasMasuk - $totalBeban;
 
-        // Label Periode
+        // Label Periode & Referensi Dokumen
         $namaBulan = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
             5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
@@ -145,8 +152,20 @@ class PdfController extends Controller
             ? "Tahun {$year} (Januari - Desember)"
             : ($namaBulan[(int) $month] ?? "Bulan {$month}") . " {$year}";
 
-        // Ringkasan Bulanan (Jika periode tahunan)
+        $docRef = sprintf('FIN-%04d-%s', $year, $month !== 'all' ? sprintf('%02d', (int) $month) : 'ANNUAL');
+
+        // Path logo perusahaan jika tersedia
+        $companyLogoPath = $setting->getLogoPath();
+
+        // Matriks Rekapitulasi 12 Bulan & Kuartal (Jika periode tahunan)
         $monthlySummary = [];
+        $quarterlySummary = [
+            'Q1' => ['label' => 'Kuartal I (Jan - Mar)', 'pendapatan' => 0, 'beban_ops' => 0, 'beban_gaji' => 0, 'total_beban' => 0, 'laba_bersih' => 0],
+            'Q2' => ['label' => 'Kuartal II (Apr - Jun)', 'pendapatan' => 0, 'beban_ops' => 0, 'beban_gaji' => 0, 'total_beban' => 0, 'laba_bersih' => 0],
+            'Q3' => ['label' => 'Kuartal III (Jul - Sep)', 'pendapatan' => 0, 'beban_ops' => 0, 'beban_gaji' => 0, 'total_beban' => 0, 'laba_bersih' => 0],
+            'Q4' => ['label' => 'Kuartal IV (Okt - Des)', 'pendapatan' => 0, 'beban_ops' => 0, 'beban_gaji' => 0, 'total_beban' => 0, 'laba_bersih' => 0],
+        ];
+
         if ($month === 'all') {
             for ($m = 1; $m <= 12; $m++) {
                 $mIn = (float) Payment::whereYear('payment_date', $year)->whereMonth('payment_date', $m)->sum('amount');
@@ -157,24 +176,40 @@ class PdfController extends Controller
                 })->sum('total_bersih');
                 $mTotBeban = $mExp + $mPay;
                 $mAcc = $viewMode === 'kas' ? $mIn : $mOrd;
+                $mNet = $mAcc - $mTotBeban;
+                $mMargin = $mAcc > 0 ? round(($mNet / $mAcc) * 100, 1) : 0;
 
                 $monthlySummary[] = [
-                    'bulan'      => $namaBulan[$m],
-                    'pendapatan' => $mAcc,
-                    'beban_ops'  => $mExp,
-                    'beban_gaji' => $mPay,
-                    'total_beban'=> $mTotBeban,
-                    'laba_bersih'=> $mAcc - $mTotBeban,
+                    'bulan_num'   => $m,
+                    'bulan'       => $namaBulan[$m],
+                    'pendapatan'  => $mAcc,
+                    'beban_ops'   => $mExp,
+                    'beban_gaji'  => $mPay,
+                    'total_beban' => $mTotBeban,
+                    'laba_bersih' => $mNet,
+                    'margin'      => $mMargin,
                 ];
+
+                $qKey = $m <= 3 ? 'Q1' : ($m <= 6 ? 'Q2' : ($m <= 9 ? 'Q3' : 'Q4'));
+                $quarterlySummary[$qKey]['pendapatan'] += $mAcc;
+                $quarterlySummary[$qKey]['beban_ops'] += $mExp;
+                $quarterlySummary[$qKey]['beban_gaji'] += $mPay;
+                $quarterlySummary[$qKey]['total_beban'] += $mTotBeban;
+                $quarterlySummary[$qKey]['laba_bersih'] += $mNet;
             }
         }
 
+        // Pengeluaran teratas untuk kompatibilitas
+        $topExpenses = $allExpenses->take(15);
+
         $pdf = Pdf::loadView('pdf.laporan-keuangan', [
             'setting'               => $setting,
+            'companyLogoPath'       => $companyLogoPath,
             'year'                  => $year,
             'month'                 => $month,
             'viewMode'              => $viewMode,
             'periodeLabel'          => $periodeLabel,
+            'docRef'                => $docRef,
             'totalNilaiOrder'       => $totalNilaiOrder,
             'totalOrderCount'       => $totalOrderCount,
             'totalKasMasuk'         => $totalKasMasuk,
@@ -186,8 +221,14 @@ class PdfController extends Controller
             'profitMargin'          => $profitMargin,
             'collectionRate'        => $collectionRate,
             'expenseRatio'          => $expenseRatio,
+            'netCashFlow'           => $netCashFlow,
             'expenseBreakdown'      => $expenseBreakdown,
             'monthlySummary'        => $monthlySummary,
+            'quarterlySummary'      => $quarterlySummary,
+            'topExpenses'           => $topExpenses,
+            'allExpenses'           => $allExpenses,
+            'orders'                => $orders,
+            'payrollItems'          => $payrollItems,
         ])->setPaper('a4', 'portrait');
 
         $cleanPeriode = str_replace([' ', '/', '\\'], '-', $periodeLabel);

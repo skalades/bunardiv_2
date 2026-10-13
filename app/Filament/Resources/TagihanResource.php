@@ -124,7 +124,7 @@ class TagihanResource extends Resource
                     ])
                     ->action(function (Order $record, array $data) {
                         $record->load(['customer', 'items.product', 'payments', 'invoices']);
-                        $setting = \App\Models\Setting::first();
+                        $setting = \App\Models\Setting::getSettings();
                         
                         $count = $record->invoices()->count() + 1;
                         $noInvoice = 'INV-' . $record->no_order . '-DP' . $count;

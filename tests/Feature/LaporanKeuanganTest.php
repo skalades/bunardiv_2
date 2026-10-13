@@ -132,6 +132,28 @@ class LaporanKeuanganTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
+        // Create an order and expense so tables have records
+        $order = Order::create([
+            'no_order'   => 'ORD-2026-Y01',
+            'nama_acara' => 'Pernikahan Annual Test',
+            'tanggal'    => '2026-05-20',
+            'total'      => 45000000,
+        ]);
+        Payment::create([
+            'order_id'       => $order->id,
+            'amount'         => 30000000,
+            'payment_date'   => '2026-05-20',
+            'payment_method' => 'Transfer BCA',
+        ]);
+        Expense::create([
+            'tanggal'           => '2026-05-21',
+            'kategori'          => 'Bahan Baku & Catering',
+            'judul'             => 'Belanja Beras & Daging',
+            'nominal'           => 12000000,
+            'metode_pembayaran' => 'Transfer',
+            'pic_id'            => $admin->id,
+        ]);
+
         $response = $this->actingAs($admin)
             ->get(route('laporan_keuangan.pdf', [
                 'year'     => 2026,
@@ -141,11 +163,37 @@ class LaporanKeuanganTest extends TestCase
 
         $response->assertSuccessful();
         $this->assertStringContainsString('application/pdf', $response->headers->get('content-type'));
+
+        $pdfContent = $response->getContent();
+        // Memastikan dokumen PDF berhasil terkompilasi dan memuat minimal 3 halaman
+        $pageCount = preg_match_all('/\/Type\s*\/Page\b/', $pdfContent);
+        $this->assertGreaterThanOrEqual(3, $pageCount, "Laporan tahunan harus terbagi dalam beberapa halaman (minimal 3 halaman)");
     }
 
     public function test_admin_can_download_laporan_keuangan_pdf_monthly(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
+
+        $order = Order::create([
+            'no_order'   => 'ORD-2026-M10',
+            'nama_acara' => 'Pernikahan Bulan Oktober',
+            'tanggal'    => '2026-10-18',
+            'total'      => 60000000,
+        ]);
+        Payment::create([
+            'order_id'       => $order->id,
+            'amount'         => 40000000,
+            'payment_date'   => '2026-10-18',
+            'payment_method' => 'Transfer Mandiri',
+        ]);
+        Expense::create([
+            'tanggal'           => '2026-10-19',
+            'kategori'          => 'Dekorasi & Pelaminan',
+            'judul'             => 'Bunga Segar & Properti Pelaminan',
+            'nominal'           => 15000000,
+            'metode_pembayaran' => 'Cash',
+            'pic_id'            => $admin->id,
+        ]);
 
         $response = $this->actingAs($admin)
             ->get(route('laporan_keuangan.pdf', [
@@ -156,6 +204,11 @@ class LaporanKeuanganTest extends TestCase
 
         $response->assertSuccessful();
         $this->assertStringContainsString('application/pdf', $response->headers->get('content-type'));
+
+        $pdfContent = $response->getContent();
+        // Memastikan dokumen PDF bulanan juga terbagi dalam beberapa halaman (minimal 3 halaman)
+        $pageCount = preg_match_all('/\/Type\s*\/Page\b/', $pdfContent);
+        $this->assertGreaterThanOrEqual(3, $pageCount, "Laporan bulanan harus terbagi dalam beberapa halaman (minimal 3 halaman)");
     }
 }
 

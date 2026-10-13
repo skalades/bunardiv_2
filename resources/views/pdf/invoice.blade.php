@@ -397,18 +397,14 @@
             $statusClass = 'badge-unpaid';
         }
 
-        // Company branding with proper fallbacks
-        $companyName = $setting && $setting->company_name ? $setting->company_name : 'BUNARDI CATERING & EVENT ORGANIZER';
-        $companyAddress = $setting && $setting->company_address ? $setting->company_address : 'Jl. Danau Sunter Utara Blok F20 No. 24-25, Jakarta Utara';
-        $companyPhone = $setting && $setting->company_phone ? $setting->company_phone : '0812-9876-5432 / 021-6543210';
-        $companyEmail = $setting && $setting->company_email ? $setting->company_email : 'billing@bunardicatering.com';
-        $companyLogoPath = $setting && $setting->company_logo ? public_path('storage/' . $setting->company_logo) : null;
-
-        // Dynamic bank accounts
-        $bankAccounts = ($setting && !empty($setting->bank_accounts)) ? $setting->bank_accounts : [
-            ['bank_name' => 'BCA', 'account_number' => '5420-9988-77', 'account_name' => 'BUNARDI CATERING PT'],
-            ['bank_name' => 'Bank Mandiri', 'account_number' => '120-00-9988776-5', 'account_name' => 'BUNARDI CATERING PT']
-        ];
+        // Company branding & settings
+        $setting = $setting ?? \App\Models\Setting::getSettings();
+        $companyName = $setting->company_name ?: 'N7 DECORATION & CATERING BU NARDI';
+        $companyAddress = $setting->company_address ?: 'Basecamp Logistik & Dapur Utama, Jakarta Barat';
+        $companyPhone = $setting->company_phone ?: '0812-8899-7700';
+        $companyEmail = $setting->company_email ?: 'operasional@n7bunardi.com';
+        $companyLogoPath = $setting->getLogoPath();
+        $bankAccounts = $setting->getFormattedBankAccounts();
 
         // Format dates
         $orderDate = \Carbon\Carbon::parse($order->created_at)->translatedFormat('d F Y');

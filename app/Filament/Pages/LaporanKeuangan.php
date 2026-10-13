@@ -161,6 +161,9 @@ class LaporanKeuangan extends Page
         $pendapatanAcuan = $this->viewMode === 'kas' ? $totalKasMasuk : $totalNilaiOrder;
         $labaBersih = $pendapatanAcuan - $totalBeban;
         $profitMargin = $pendapatanAcuan > 0 ? round(($labaBersih / $pendapatanAcuan) * 100, 1) : 0;
+        $collectionRate = $totalNilaiOrder > 0 ? round(($totalKasMasuk / $totalNilaiOrder) * 100, 1) : 0;
+        $expenseRatio = $pendapatanAcuan > 0 ? round(($totalBeban / $pendapatanAcuan) * 100, 1) : 0;
+        $netCashFlow = $totalKasMasuk - $totalBeban;
 
         return [
             'totalNilaiOrder'       => $totalNilaiOrder,
@@ -172,6 +175,9 @@ class LaporanKeuangan extends Page
             'totalBeban'            => $totalBeban,
             'labaBersih'            => $labaBersih,
             'profitMargin'          => $profitMargin,
+            'collectionRate'        => $collectionRate,
+            'expenseRatio'          => $expenseRatio,
+            'netCashFlow'           => $netCashFlow,
         ];
     }
 
@@ -301,5 +307,71 @@ class LaporanKeuangan extends Page
                 'profit_margin'    => $kpi['profitMargin'],
             ],
         ];
+    }
+
+    /**
+     * Daftar Pesanan / Kontrak Acara pada periode terpilih
+     */
+    public function getOrdersProperty()
+    {
+        $query = Order::query()
+            ->with(['customer', 'payments'])
+            ->whereYear('tanggal', $this->year);
+        if ($this->month !== 'all') {
+            $query->whereMonth('tanggal', (int) $this->month);
+        }
+        return $query->orderBy('tanggal', 'asc')->get();
+    }
+
+    /**
+     * Buku Catatan Transaksi Pengeluaran Operasional pada periode terpilih
+     */
+    public function getExpensesListProperty()
+    {
+        $query = Expense::query()
+            ->whereYear('tanggal', $this->year);
+        if ($this->month !== 'all') {
+            $query->whereMonth('tanggal', (int) $this->month);
+        }
+        return $query->orderBy('tanggal', 'asc')->get();
+    }
+
+    /**
+     * Matriks Rekapitulasi Finansial 12 Bulan (Tahun Berjalan)
+     */
+    public function getMonthlySummaryProperty(): array
+    {
+        $namaBulan = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+
+        $summary = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $inflow = (float) Payment::whereYear('payment_date', $this->year)->whereMonth('payment_date', $m)->sum('amount');
+            $orderVal = (float) Order::whereYear('tanggal', $this->year)->whereMonth('tanggal', $m)->sum('total');
+            $ops = (float) Expense::whereYear('tanggal', $this->year)->whereMonth('tanggal', $m)->sum('nominal');
+            $pay = (float) PayrollItem::whereHas('payroll', function ($q) use ($m) {
+                $q->whereYear('created_at', $this->year)->whereMonth('created_at', $m);
+            })->sum('total_bersih');
+            $totBeban = $ops + $pay;
+            $acc = $this->viewMode === 'kas' ? $inflow : $orderVal;
+            $net = $acc - $totBeban;
+            $margin = $acc > 0 ? round(($net / $acc) * 100, 1) : 0;
+
+            $summary[] = [
+                'bulan_num'   => $m,
+                'bulan'       => $namaBulan[$m],
+                'pendapatan'  => $acc,
+                'beban_ops'   => $ops,
+                'beban_gaji'  => $pay,
+                'total_beban' => $totBeban,
+                'laba_bersih' => $net,
+                'margin'      => $margin,
+            ];
+        }
+
+        return $summary;
     }
 }
