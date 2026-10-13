@@ -82,6 +82,12 @@
      }">
 
     <style>
+        /* Lebarkan modal window saat picker aktif agar tidak terhimpit */
+        .fi-modal-window {
+            max-width: min(94vw, 1260px) !important;
+            width: 100% !important;
+        }
+
         .pos-equipment-wrapper {
             --bg-dark: #0f1015;
             --bg-card: #15161d;
@@ -95,30 +101,47 @@
             --danger-red: #e74c3c;
             color: var(--text-primary);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
         }
 
+        /* Menggunakan Flexbox agar kedua panel presisi di dalam modal tanpa overflow */
         .pe-layout {
-            display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 20px;
+            display: flex;
+            flex-direction: row;
+            gap: 16px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
             min-height: 480px;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 960px) {
             .pe-layout {
-                grid-template-columns: 1fr;
+                flex-direction: column;
+            }
+            .pe-cart-panel {
+                flex: 1 1 auto !important;
+                width: 100% !important;
+                max-width: 100% !important;
             }
         }
 
-        /* Sisi Kiri: Katalog Barang */
+        /* Sisi Kiri: Panel Katalog Barang */
         .pe-catalog-panel {
+            flex: 1 1 0%;
+            min-width: 0; /* KUNCI: Mencegah flex blowout */
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 16px;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .pe-search-bar {
@@ -126,6 +149,7 @@
             align-items: center;
             position: relative;
             width: 100%;
+            box-sizing: border-box;
         }
 
         .pe-search-bar i {
@@ -144,6 +168,7 @@
             color: var(--text-primary);
             font-size: 13px;
             outline: none;
+            box-sizing: border-box;
             transition: border-color 0.2s;
         }
 
@@ -156,6 +181,8 @@
             gap: 6px;
             overflow-x: auto;
             padding-bottom: 4px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .pe-categories-scroll::-webkit-scrollbar {
@@ -167,7 +194,7 @@
         }
 
         .pe-cat-chip {
-            padding: 6px 12px;
+            padding: 5px 12px;
             border-radius: 100px;
             font-size: 11px;
             font-weight: 600;
@@ -191,19 +218,15 @@
             font-weight: 700;
         }
 
+        /* Grid barang otomatis menyesuaikan ruang */
         .pe-grid-items {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
             gap: 10px;
-            max-height: 380px;
+            max-height: 400px;
             overflow-y: auto;
             padding-right: 4px;
-        }
-
-        @media (min-width: 1100px) {
-            .pe-grid-items {
-                grid-template-columns: repeat(3, 1fr);
-            }
+            box-sizing: border-box;
         }
 
         .pe-grid-items::-webkit-scrollbar {
@@ -224,6 +247,7 @@
             flex-direction: column;
             gap: 6px;
             position: relative;
+            box-sizing: border-box;
             transition: all 0.15s ease;
             user-select: none;
         }
@@ -284,14 +308,20 @@
             padding: 2px 7px;
         }
 
-        /* Sisi Kanan: Keranjang Peralatan Dipilih */
+        /* Sisi Kanan: Panel Keranjang Peralatan Dipilih */
         .pe-cart-panel {
+            flex: 0 0 340px;
+            width: 340px;
+            max-width: 340px;
+            min-width: 0; /* KUNCI: Mencegah overflow */
             display: flex;
             flex-direction: column;
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 16px;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .pe-cart-header {
@@ -335,6 +365,7 @@
             overflow-y: auto;
             flex: 1;
             padding-right: 4px;
+            box-sizing: border-box;
         }
 
         .pe-cart-list::-webkit-scrollbar {
@@ -352,8 +383,11 @@
             background: var(--bg-dark);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 9px 12px;
-            gap: 10px;
+            padding: 8px 10px;
+            gap: 8px;
+            box-sizing: border-box;
+            width: 100%;
+            overflow: hidden;
             transition: border-color 0.15s;
         }
 
@@ -366,11 +400,12 @@
             flex-direction: column;
             gap: 2px;
             flex: 1;
-            min-width: 0;
+            min-width: 0; /* Agar teks panjang terpotong rapi dengan ellipsis */
+            overflow: hidden;
         }
 
         .pe-cart-item-name {
-            font-size: 12.5px;
+            font-size: 12px;
             font-weight: 600;
             color: var(--text-primary);
             white-space: nowrap;
@@ -379,25 +414,28 @@
         }
 
         .pe-cart-item-sub {
-            font-size: 10.5px;
+            font-size: 10px;
             color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .pe-qty-controls {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
             flex-shrink: 0;
         }
 
         .pe-btn-qty {
-            width: 28px;
-            height: 28px;
+            width: 26px;
+            height: 26px;
             border-radius: 6px;
             background: #1f222e;
             border: 1px solid #33374a;
             color: var(--accent-gold);
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
             display: flex;
             align-items: center;
@@ -412,18 +450,19 @@
         }
 
         .pe-qty-input {
-            width: 44px;
-            height: 28px;
+            width: 38px;
+            height: 26px;
             text-align: center;
             background: var(--bg-dark);
             border: 1px solid var(--border-color);
             border-radius: 6px;
             color: var(--text-primary);
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             font-family: monospace;
             outline: none;
-            padding: 0 4px;
+            padding: 0 2px;
+            box-sizing: border-box;
         }
 
         .pe-qty-input:focus {
@@ -434,9 +473,9 @@
             background: transparent;
             border: none;
             color: #64748b;
-            font-size: 16px;
+            font-size: 15px;
             cursor: pointer;
-            padding: 4px;
+            padding: 3px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -455,14 +494,15 @@
             justify-content: center;
             gap: 8px;
             color: var(--text-secondary);
-            font-size: 12.5px;
+            font-size: 12px;
             height: 260px;
             text-align: center;
-            padding: 20px;
+            padding: 16px;
+            box-sizing: border-box;
         }
 
         .pe-cart-empty i {
-            font-size: 38px;
+            font-size: 36px;
             color: #3b4056;
         }
 
@@ -473,12 +513,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 12px;
+            font-size: 11.5px;
             color: var(--text-secondary);
+            box-sizing: border-box;
         }
 
         .pe-cart-footer-val {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
             color: var(--accent-gold);
             font-family: monospace;
@@ -597,12 +638,12 @@
             <div class="pe-cart-empty" x-show="items.length === 0">
                 <i class="ph ph-hand-pointing"></i>
                 <div style="font-weight: 600; color: var(--text-primary);">Belum Ada Peralatan Dipilih</div>
-                <div style="font-size: 11.5px;">Klik kartu peralatan di katalog sebelah kiri untuk memasukkan barang dan mengatur jumlahnya.</div>
+                <div style="font-size: 11px; line-height: 1.4;">Klik kartu peralatan di katalog sebelah kiri untuk memasukkan barang.</div>
             </div>
 
             <!-- Summary Footer -->
             <div class="pe-cart-footer" x-show="items.length > 0">
-                <span>Total Barang yang Akan Disiapkan:</span>
+                <span>Total Barang Disiapkan:</span>
                 <span class="pe-cart-footer-val" x-text="totalQtyCount + ' Item (' + totalItemsCount + ' macam)'"></span>
             </div>
         </div>
