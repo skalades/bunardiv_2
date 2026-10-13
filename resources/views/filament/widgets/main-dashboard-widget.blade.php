@@ -81,13 +81,20 @@
         .c-order-info h4 span { color: var(--accent-gold); font-size: 12px; margin-left: 10px; font-family: monospace; font-weight: 400; }
         .c-order-info p { font-size: 12px; color: var(--text-secondary); margin: 0; }
         
-        .c-badge { padding: 6px 14px; border-radius: 100px; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; }
+        .c-badge { padding: 6px 14px; border-radius: 100px; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
         .c-badge.masuk { background-color: rgba(255,255,255,0.08); color: var(--text-primary); }
         .c-badge.selesai { background-color: rgba(62, 224, 138, 0.1); color: var(--success-green); border: 1px solid rgba(62, 224, 138, 0.15); }
         .c-badge.dp { background-color: rgba(207, 162, 75, 0.1); color: var(--accent-gold); border: 1px solid rgba(207, 162, 75, 0.15); }
+        .c-badge.proses { background-color: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .c-badge.batal { background-color: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
     </style>
     
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    @php
+        $stats = $this->dashboardStats;
+        $recentOrders = $this->recentOrders;
+    @endphp
 
     <div class="custom-dashboard">
         <header class="c-header">
@@ -97,40 +104,44 @@
 
         <!-- Top Cards -->
         <div class="c-grid-cards">
+            <!-- 1. Pesanan Hari Ini -->
             <div class="c-card">
                 <div class="c-card-header">
                     <div class="c-card-title">PESANAN HARI INI</div>
                     <div class="c-card-icon"><i class="ph ph-bag-check"></i></div>
                 </div>
-                <div class="c-card-value">0</div>
-                <div class="c-card-subtitle">3 menunggu diproses</div>
+                <div class="c-card-value">{{ $stats['todayOrdersCount'] }}</div>
+                <div class="c-card-subtitle">{{ $stats['pendingOrdersCount'] }} menunggu diproses</div>
             </div>
             
+            <!-- 2. Total Pemasukan -->
             <div class="c-card">
                 <div class="c-card-header">
                     <div class="c-card-title">TOTAL PEMASUKAN</div>
                     <div class="c-card-icon"><i class="ph ph-trend-up"></i></div>
                 </div>
-                <div class="c-card-value gold">Rp 46.250.000</div>
-                <div class="c-card-subtitle">Semua pembayaran masuk</div>
+                <div class="c-card-value gold">Rp {{ number_format($stats['totalPemasukan'], 0, ',', '.') }}</div>
+                <div class="c-card-subtitle">{{ $stats['totalPembayaranCount'] }} pembayaran masuk</div>
             </div>
 
+            <!-- 3. Pengeluaran -->
             <div class="c-card">
                 <div class="c-card-header">
                     <div class="c-card-title">PENGELUARAN</div>
                     <div class="c-card-icon"><i class="ph ph-wallet"></i></div>
                 </div>
-                <div class="c-card-value gold">Rp 2.950.000</div>
-                <div class="c-card-subtitle">Operasional & gaji</div>
+                <div class="c-card-value gold">Rp {{ number_format($stats['totalPengeluaran'], 0, ',', '.') }}</div>
+                <div class="c-card-subtitle">Ops: Rp {{ number_format($stats['bebanOps'], 0, ',', '.') }} &bull; Gaji: Rp {{ number_format($stats['bebanGaji'], 0, ',', '.') }}</div>
             </div>
 
+            <!-- 4. Piutang Pelanggan -->
             <div class="c-card">
                 <div class="c-card-header">
                     <div class="c-card-title">PIUTANG PELANGGAN</div>
                     <div class="c-card-icon"><i class="ph ph-credit-card"></i></div>
                 </div>
-                <div class="c-card-value gold">Rp 25.000.000</div>
-                <div class="c-card-subtitle">1 invoice belum lunas</div>
+                <div class="c-card-value gold">Rp {{ number_format($stats['piutangPelanggan'], 0, ',', '.') }}</div>
+                <div class="c-card-subtitle">{{ $stats['unpaidInvoicesCount'] }} pesanan belum lunas</div>
             </div>
         </div>
 
@@ -138,23 +149,25 @@
         <div class="c-grid-middle">
             <div class="c-card c-profit-card">
                 <div class="c-card-header-icon">
-                    <div class="title">Estimasi Profit Bulan Ini</div>
+                    <div class="title">Estimasi Profit Bulan Ini ({{ now()->translatedFormat('F Y') }})</div>
                     <i class="ph ph-sparkle"></i>
                 </div>
-                <div class="c-profit-amount">Rp 43.300.000</div>
+                <div class="c-profit-amount" style="color: {{ $stats['profitBulanIni'] >= 0 ? 'var(--success-green)' : '#ef4444' }};">
+                    Rp {{ number_format($stats['profitBulanIni'], 0, ',', '.') }}
+                </div>
                 
                 <div class="c-profit-stats">
                     <div class="c-stat-item">
                         <div class="c-stat-label">PEMASUKAN</div>
-                        <div class="c-stat-value gold">Rp 46.250.000</div>
+                        <div class="c-stat-value gold">Rp {{ number_format($stats['pemasukanBulanIni'], 0, ',', '.') }}</div>
                     </div>
                     <div class="c-stat-item">
                         <div class="c-stat-label">PENGELUARAN</div>
-                        <div class="c-stat-value pink">- Rp 2.950.000</div>
+                        <div class="c-stat-value pink">- Rp {{ number_format($stats['pengeluaranBulanIni'], 0, ',', '.') }}</div>
                     </div>
                     <div class="c-stat-item">
                         <div class="c-stat-label">PESANAN SELESAI</div>
-                        <div class="c-stat-value">1</div>
+                        <div class="c-stat-value">{{ $stats['pesananSelesaiBulanIni'] }}</div>
                     </div>
                 </div>
             </div>
@@ -166,21 +179,27 @@
                 </div>
                 <ul class="c-notification-list">
                     <li class="c-notification-item">
-                        <div class="c-dot red"></div>
-                        <span><b>1</b> invoice belum lunas.</span>
+                        <div class="c-dot {{ $stats['unpaidInvoicesCount'] > 0 ? 'red' : 'green' }}"></div>
+                        <span>
+                            <a href="{{ url('/admin/tagihans') }}" style="color: inherit; text-decoration: none;">
+                                <b>{{ $stats['unpaidInvoicesCount'] }}</b> invoice/pesanan belum lunas.
+                            </a>
+                        </span>
                     </li>
                     <li class="c-notification-item">
                         <div class="c-dot gold"></div>
                         <span>
-                            <a href="/kalender" style="color: inherit; text-decoration: none;">
+                            <a href="{{ url('/admin/kalender-acara') }}" style="color: inherit; text-decoration: none;">
                                 <b>{{ $this->today_orders->count() }}</b> jadwal hari ini.
                                 <span style="color: var(--accent-gold); font-size: 11px; margin-left: 4px;">(Lihat Kalender &rarr;)</span>
                             </a>
                         </span>
                     </li>
                     <li class="c-notification-item">
-                        <div class="c-dot green"></div>
-                        <span><b>3</b> crew sudah presensi, 3 belum.</span>
+                        <div class="c-dot {{ $stats['crewBelum'] > 0 ? 'gold' : 'green' }}"></div>
+                        <span>
+                            <b>{{ $stats['crewHadir'] }}</b> crew sudah presensi, <b>{{ $stats['crewBelum'] }}</b> belum.
+                        </span>
                     </li>
                 </ul>
             </div>
@@ -188,20 +207,21 @@
 
         <!-- Bottom Section -->
         <div class="c-grid-bottom">
+            <!-- Jadwal Hari Ini -->
             <div class="c-card">
                 <div class="c-card-header-icon" style="margin-bottom: 8px;">
                     <div class="title" style="font-size: 14px;">
                         <i class="ph ph-calendar-blank" style="vertical-align: middle; margin-right: 6px;"></i> 
                         Jadwal Hari Ini
                     </div>
-                    <a href="/kalender" style="font-size: 11px; color: var(--accent-gold); text-decoration: none; font-weight: 500;">
+                    <a href="{{ url('/admin/kalender-acara') }}" style="font-size: 11px; color: var(--accent-gold); text-decoration: none; font-weight: 500;">
                         Kalender Lengkap &rarr;
                     </a>
                 </div>
                 @if($this->today_orders->count() > 0)
                     <div class="c-orders-list" style="margin-top: 8px;">
                         @foreach($this->today_orders as $tOrder)
-                            <a href="/kalender" style="text-decoration: none; color: inherit;">
+                            <a href="{{ url('/admin/orders/' . $tOrder->id) }}" style="text-decoration: none; color: inherit;">
                                 <div class="c-order-item" style="padding: 10px 14px;">
                                     <div class="c-order-info">
                                         <h4>{{ $tOrder->nama_acara }} <span>{{ $tOrder->no_order }}</span></h4>
@@ -215,57 +235,55 @@
                 @else
                     <div class="c-schedule-empty" style="flex-direction: column; gap: 8px;">
                         <div>Tidak ada acara hari ini.</div>
-                        <a href="/kalender" class="c-badge dp" style="text-decoration: none; padding: 6px 12px;">
+                        <a href="{{ url('/admin/kalender-acara') }}" class="c-badge dp" style="text-decoration: none; padding: 6px 12px;">
                             Buka Kalender Jadwal
                         </a>
                     </div>
                 @endif
             </div>
 
+            <!-- Pesanan Terbaru (Data Real dari Database) -->
             <div class="c-card">
                 <div class="c-card-header-icon" style="margin-bottom: 16px;">
                     <div class="title" style="font-size: 14px;">
                         <i class="ph ph-package" style="vertical-align: middle; margin-right: 6px;"></i> 
                         Pesanan Terbaru
                     </div>
+                    <a href="{{ url('/admin/orders') }}" style="font-size: 11px; color: var(--accent-gold); text-decoration: none; font-weight: 500;">
+                        Lihat Semua &rarr;
+                    </a>
                 </div>
                 
                 <div class="c-orders-list">
-                    <div class="c-order-item">
-                        <div class="c-order-info">
-                            <h4>TEST Event <span>ORD-2026-0005</span></h4>
-                            <p>TEST_Customer &middot; 01 Mar 2026</p>
+                    @forelse($recentOrders as $rOrder)
+                        @php
+                            $badgeClass = match($rOrder->status) {
+                                'selesai' => 'selesai',
+                                'dp dibayar' => 'dp',
+                                'proses' => 'proses',
+                                'dibatalkan' => 'batal',
+                                default => 'masuk',
+                            };
+                            $clientDisplay = $rOrder->customer->nama ?? ($rOrder->nama_acara ?? 'Pelanggan');
+                            $dateDisplay = $rOrder->tanggal ? \Carbon\Carbon::parse($rOrder->tanggal)->translatedFormat('d M Y') : '-';
+                        @endphp
+                        <a href="{{ url('/admin/orders/' . $rOrder->id) }}" style="text-decoration: none; color: inherit;">
+                            <div class="c-order-item">
+                                <div class="c-order-info">
+                                    <h4>{{ $rOrder->nama_acara }} <span>{{ $rOrder->no_order }}</span></h4>
+                                    <p>{{ $clientDisplay }} &middot; {{ $dateDisplay }}</p>
+                                </div>
+                                <div class="c-badge {{ $badgeClass }}">{{ strtoupper($rOrder->status) }}</div>
+                            </div>
+                        </a>
+                    @empty
+                        <div class="c-schedule-empty" style="flex-direction: column; gap: 8px;">
+                            <div>Belum ada pesanan terdaftar.</div>
+                            <a href="{{ url('/admin/orders/create') }}" class="c-badge dp" style="text-decoration: none; padding: 6px 12px;">
+                                + Buat Pesanan Baru
+                            </a>
                         </div>
-                        <div class="c-badge masuk">PESANAN MASUK</div>
-                    </div>
-                    <div class="c-order-item">
-                        <div class="c-order-info">
-                            <h4>Test2 <span>ORD-2026-0004</span></h4>
-                            <p>C &middot; 31 Des 2026</p>
-                        </div>
-                        <div class="c-badge masuk">PESANAN MASUK</div>
-                    </div>
-                    <div class="c-order-item">
-                        <div class="c-order-info">
-                            <h4>Test Event <span>ORD-2026-0003</span></h4>
-                            <p>TestCust &middot; 31 Des 2026</p>
-                        </div>
-                        <div class="c-badge masuk">PESANAN MASUK</div>
-                    </div>
-                    <div class="c-order-item">
-                        <div class="c-order-info">
-                            <h4>Festival Bunga <span>ORD-2026-0002</span></h4>
-                            <p>NADYA &middot; 04 Des 2026</p>
-                        </div>
-                        <div class="c-badge selesai">SELESAI</div>
-                    </div>
-                    <div class="c-order-item">
-                        <div class="c-order-info">
-                            <h4>Wedding Rina & Fajar <span>ORD-2026-0001</span></h4>
-                            <p>Rina & Fajar &middot; 01 Okt 2026</p>
-                        </div>
-                        <div class="c-badge dp">DP DIBAYAR</div>
-                    </div>
+                    @endforelse
                 </div>
             </div>
         </div>
