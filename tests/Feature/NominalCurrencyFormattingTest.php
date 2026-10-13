@@ -3,14 +3,17 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\InvoiceResource;
-use App\Filament\Resources\OrderResource;
-use App\Filament\Resources\OrderResource\RelationManagers\PaymentsRelationManager;
-use App\Filament\Resources\TagihanResource;
 use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Schema;
-use Livewire\Component;
-use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Contracts\HasSchemas;
+use Filament\Schemas\Schema;
+use Filament\Support\Contracts\TranslatableContentDriver;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Table;
+use Illuminate\Support\Number;
+use Livewire\Component;
 use Tests\TestCase;
 
 class NominalCurrencyFormattingTest extends TestCase
@@ -27,10 +30,16 @@ class NominalCurrencyFormattingTest extends TestCase
 
     public function test_masked_currency_string_is_properly_stripped_and_cast_to_numeric(): void
     {
-        $livewire = new class extends Component implements HasSchemas {
+        $livewire = new class extends Component implements HasSchemas
+        {
             use InteractsWithSchemas;
+
             public ?array $data = [];
-            public function render() { return '<div></div>'; }
+
+            public function render()
+            {
+                return '<div></div>';
+            }
         };
 
         $schema = Schema::make($livewire)
@@ -52,10 +61,16 @@ class NominalCurrencyFormattingTest extends TestCase
 
     public function test_zero_and_null_values_are_handled_correctly(): void
     {
-        $livewire = new class extends Component implements HasSchemas {
+        $livewire = new class extends Component implements HasSchemas
+        {
             use InteractsWithSchemas;
+
             public ?array $data = [];
-            public function render() { return '<div></div>'; }
+
+            public function render()
+            {
+                return '<div></div>';
+            }
         };
 
         $schema = Schema::make($livewire)
@@ -76,14 +91,19 @@ class NominalCurrencyFormattingTest extends TestCase
 
     public function test_invoice_resource_nominal_field_uses_currency_idr(): void
     {
-        $livewire = new class extends Component implements HasSchemas {
+        $livewire = new class extends Component implements HasSchemas
+        {
             use InteractsWithSchemas;
-            public function render() { return '<div></div>'; }
+
+            public function render()
+            {
+                return '<div></div>';
+            }
         };
 
         $schema = InvoiceResource::form(Schema::make($livewire));
         $components = $schema->getFlatComponents();
-        
+
         $nominalField = collect($components)->first(fn ($c) => $c instanceof TextInput && $c->getName() === 'nominal_tagihan');
         $this->assertNotNull($nominalField);
         $this->assertEquals('Rp', $nominalField->getPrefixLabel());
@@ -92,10 +112,16 @@ class NominalCurrencyFormattingTest extends TestCase
 
     public function test_currency_idr_formats_decimal_database_values_without_multiplying_by_100(): void
     {
-        $livewire = new class extends Component implements HasSchemas {
+        $livewire = new class extends Component implements HasSchemas
+        {
             use InteractsWithSchemas;
+
             public ?array $data = [];
-            public function render() { return '<div></div>'; }
+
+            public function render()
+            {
+                return '<div></div>';
+            }
         };
 
         $schema = Schema::make($livewire)
@@ -120,7 +146,7 @@ class NominalCurrencyFormattingTest extends TestCase
 
     public function test_system_wide_currency_uses_dot_thousands_separator(): void
     {
-        $formatted = \Illuminate\Support\Number::currency(1500000, 'IDR');
+        $formatted = Number::currency(1500000, 'IDR');
 
         // Verify thousand separator is dot '.' (e.g. 1.500.000)
         $this->assertStringContainsString('1.500.000', $formatted);
@@ -130,14 +156,23 @@ class NominalCurrencyFormattingTest extends TestCase
 
     public function test_table_money_column_uses_dot_thousands_separator(): void
     {
-        $livewire = new class extends Component implements \Filament\Tables\Contracts\HasTable {
-            use \Filament\Tables\Concerns\InteractsWithTable;
-            public function makeFilamentTranslatableContentDriver(): ?\Filament\Support\Contracts\TranslatableContentDriver { return null; }
-            public function render() { return '<div></div>'; }
+        $livewire = new class extends Component implements HasTable
+        {
+            use InteractsWithTable;
+
+            public function makeFilamentTranslatableContentDriver(): ?TranslatableContentDriver
+            {
+                return null;
+            }
+
+            public function render()
+            {
+                return '<div></div>';
+            }
         };
 
-        $table = \Filament\Tables\Table::make($livewire);
-        $column = \Filament\Tables\Columns\TextColumn::make('total')->money('idr')->table($table);
+        $table = Table::make($livewire);
+        $column = TextColumn::make('total')->money('idr')->table($table);
 
         $formatted = $column->formatState(25000000);
 
@@ -146,4 +181,3 @@ class NominalCurrencyFormattingTest extends TestCase
         $this->assertStringNotContainsString('25,000,000', $formatted);
     }
 }
-

@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Setting extends Model
 {
     protected $fillable = [
-        'company_name', 'company_address', 'company_phone', 'company_email', 'company_logo', 'bank_accounts', 'invoice_notes'
+        'company_name', 'company_address', 'company_phone', 'company_email', 'company_logo', 'bank_accounts', 'invoice_notes',
     ];
 
     protected $casts = [
@@ -20,15 +21,15 @@ class Setting extends Model
     public static function getSettings(): self
     {
         return static::first() ?? new static([
-            'company_name'    => 'N7 DECORATION & CATERING BU NARDI',
+            'company_name' => 'N7 DECORATION & CATERING BU NARDI',
             'company_address' => 'Basecamp Logistik & Dapur Utama, Jakarta Barat',
-            'company_phone'   => '0812-8899-7700',
-            'company_email'   => 'operasional@n7bunardi.com',
-            'bank_accounts'   => [
+            'company_phone' => '0812-8899-7700',
+            'company_email' => 'operasional@n7bunardi.com',
+            'bank_accounts' => [
                 ['bank_name' => 'BCA', 'account_number' => '5420-9988-77', 'account_name' => 'BU NARDI CATERING'],
                 ['bank_name' => 'Bank Mandiri', 'account_number' => '120-00-9988776-5', 'account_name' => 'BU NARDI CATERING'],
             ],
-            'invoice_notes'   => "1. Pembayaran dianggap sah jika dana telah efektif masuk ke rekening resmi kami.\n2. Pelunasan sisa tagihan wajib diselesaikan maksimal H-3 sebelum pelaksanaan acara.\n3. Konfirmasi perubahan jadwal atau menu wajib disampaikan secara tertulis maksimal H-7.",
+            'invoice_notes' => "1. Pembayaran dianggap sah jika dana telah efektif masuk ke rekening resmi kami.\n2. Pelunasan sisa tagihan wajib diselesaikan maksimal H-3 sebelum pelaksanaan acara.\n3. Konfirmasi perubahan jadwal atau menu wajib disampaikan secara tertulis maksimal H-7.",
         ]);
     }
 
@@ -45,18 +46,19 @@ class Setting extends Model
         $withoutStorage = preg_replace('/^storage[\/\\\\]/', '', $cleanPath);
         $publicDiskPath = null;
         try {
-            $publicDiskPath = \Illuminate\Support\Facades\Storage::disk('public')->path($withoutStorage);
-        } catch (\Throwable $e) {}
+            $publicDiskPath = Storage::disk('public')->path($withoutStorage);
+        } catch (\Throwable $e) {
+        }
 
         $candidates = array_filter(array_unique([
             $publicDiskPath,
-            storage_path('app/public/' . $withoutStorage),
-            public_path('storage/' . $withoutStorage),
-            storage_path('app/public/' . $cleanPath),
+            storage_path('app/public/'.$withoutStorage),
+            public_path('storage/'.$withoutStorage),
+            storage_path('app/public/'.$cleanPath),
             public_path($cleanPath),
-            storage_path('app/private/' . $withoutStorage),
-            storage_path('app/private/' . $cleanPath),
-            public_path('storage/' . $cleanPath),
+            storage_path('app/private/'.$withoutStorage),
+            storage_path('app/private/'.$cleanPath),
+            public_path('storage/'.$cleanPath),
         ]));
 
         foreach ($candidates as $candidate) {
@@ -73,7 +75,7 @@ class Setting extends Model
      */
     public function getFormattedBankAccounts(): array
     {
-        if (!empty($this->bank_accounts) && is_array($this->bank_accounts)) {
+        if (! empty($this->bank_accounts) && is_array($this->bank_accounts)) {
             return $this->bank_accounts;
         }
 

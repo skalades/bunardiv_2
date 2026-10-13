@@ -1,8 +1,11 @@
 <?php
 
+use App\Models\Product;
+use Illuminate\Contracts\Console\Kernel;
+
 require __DIR__.'/vendor/autoload.php';
 $app = require_once __DIR__.'/bootstrap/app.php';
-$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+$app->make(Kernel::class)->bootstrap();
 
 $products = [
     ['kategori' => 'CATERING', 'nama' => 'Paket Catering Basic', 'harga' => 45000],
@@ -17,7 +20,7 @@ $products = [
     ['kategori' => 'DECORATION', 'nama' => 'Sound System', 'harga' => 2000000],
     ['kategori' => 'DECORATION', 'nama' => 'Bunga Segar per Meja', 'harga' => 150000],
 ];
-foreach($products as $p) {
-    \App\Models\Product::updateOrCreate(['nama' => $p['nama']], $p);
+foreach ($products as $p) {
+    Product::updateOrCreate(['nama' => $p['nama']], $p);
 }
-echo "Products seeded.";
+echo 'Products seeded.';

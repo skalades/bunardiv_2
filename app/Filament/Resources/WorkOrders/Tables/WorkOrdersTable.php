@@ -2,12 +2,13 @@
 
 namespace App\Filament\Resources\WorkOrders\Tables;
 
+use App\Models\WorkOrder;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Table;
 
 class WorkOrdersTable
@@ -56,17 +57,17 @@ class WorkOrdersTable
                 //
             ])
             ->recordActions([
-                \Filament\Actions\Action::make('cetak_spk')
+                Action::make('cetak_spk')
                     ->label('Cetak SPK')
                     ->icon('heroicon-o-document-text')
                     ->color('warning')
-                    ->url(fn (\App\Models\WorkOrder $record) => route('spk.download', $record))
+                    ->url(fn (WorkOrder $record) => route('spk.download', $record))
                     ->openUrlInNewTab(),
-                \Filament\Actions\Action::make('cetak_sj')
+                Action::make('cetak_sj')
                     ->label('Cetak Surat Jalan')
                     ->icon('heroicon-o-truck')
                     ->color('success')
-                    ->url(fn (\App\Models\WorkOrder $record) => route('surat_jalan.download', $record))
+                    ->url(fn (WorkOrder $record) => route('surat_jalan.download', $record))
                     ->openUrlInNewTab(),
                 ViewAction::make(),
                 EditAction::make(),

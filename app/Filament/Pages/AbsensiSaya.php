@@ -5,7 +5,6 @@ namespace App\Filament\Pages;
 use App\Models\Attendance;
 use App\Models\EmployeeLoan;
 use App\Models\WorkOrderUser;
-use Carbon\Carbon;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 
@@ -69,14 +68,14 @@ class AbsensiSaya extends Page
 
         $now = now();
         $assignment->update([
-            'hadir'             => true,
-            'waktu_absen'       => $now,
-            'catatan_kehadiran' => $catatan ?: 'Self check-in pada ' . $now->format('d M Y H:i') . ' WIB',
+            'hadir' => true,
+            'waktu_absen' => $now,
+            'catatan_kehadiran' => $catatan ?: 'Self check-in pada '.$now->format('d M Y H:i').' WIB',
         ]);
 
         Notification::make()
             ->title('Absensi Berhasil!')
-            ->body('Kehadiran Anda pada SPK ' . ($assignment->workOrder->spk_number ?? '') . ' telah berhasil dicatat.')
+            ->body('Kehadiran Anda pada SPK '.($assignment->workOrder->spk_number ?? '').' telah berhasil dicatat.')
             ->success()
             ->send();
     }
@@ -95,7 +94,7 @@ class AbsensiSaya extends Page
 
         if ($existing) {
             Notification::make()
-                ->title('Anda sudah mencatat absensi hari ini (' . ucfirst($existing->status) . ').')
+                ->title('Anda sudah mencatat absensi hari ini ('.ucfirst($existing->status).').')
                 ->warning()
                 ->send();
 
@@ -104,16 +103,16 @@ class AbsensiSaya extends Page
 
         try {
             Attendance::create([
-                'user_id'      => $userId,
-                'tanggal'      => $today,
-                'status'       => $status,
-                'keterangan'   => $keterangan ?: 'Self check-in harian pada ' . now()->format('H:i') . ' WIB',
+                'user_id' => $userId,
+                'tanggal' => $today,
+                'status' => $status,
+                'keterangan' => $keterangan ?: 'Self check-in harian pada '.now()->format('H:i').' WIB',
                 'dicatat_oleh' => $userId,
             ]);
 
             Notification::make()
                 ->title('Absensi Harian Berhasil!')
-                ->body('Kehadiran hari ini (' . now()->translatedFormat('l, d F Y') . ') telah tercatat.')
+                ->body('Kehadiran hari ini ('.now()->translatedFormat('l, d F Y').') telah tercatat.')
                 ->success()
                 ->send();
         } catch (\Throwable $e) {
@@ -165,13 +164,13 @@ class AbsensiSaya extends Page
             ->sum('sisa_hutang');
 
         return [
-            'user'                => $user,
-            'profile'             => $profile,
-            'todayAttendance'     => $todayAttendance,
-            'assignments'         => $assignments,
-            'eventHadirBulanIni'  => $eventHadirBulanIni,
-            'hariHadirBulanIni'   => $hariHadirBulanIni,
-            'kasbonAktif'         => $kasbonAktif,
+            'user' => $user,
+            'profile' => $profile,
+            'todayAttendance' => $todayAttendance,
+            'assignments' => $assignments,
+            'eventHadirBulanIni' => $eventHadirBulanIni,
+            'hariHadirBulanIni' => $hariHadirBulanIni,
+            'kasbonAktif' => $kasbonAktif,
         ];
     }
 }

@@ -3,16 +3,17 @@
 namespace App\Filament\Pages;
 
 use App\Models\Setting;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Pages\Page;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
+use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Form;
-use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
+use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 
 class Settings extends Page implements HasForms
 {
@@ -53,11 +54,11 @@ class Settings extends Page implements HasForms
         $this->form->fill($setting->toArray());
     }
 
-    public function form(\Filament\Schemas\Schema $form): \Filament\Schemas\Schema
+    public function form(Schema $form): Schema
     {
         return $form
             ->schema([
-                \Filament\Schemas\Components\Section::make('Informasi Perusahaan')
+                Section::make('Informasi Perusahaan')
                     ->schema([
                         TextInput::make('company_name')->label('Nama Perusahaan')->required(),
                         Textarea::make('company_address')->label('Alamat Lengkap')->columnSpanFull(),
@@ -72,7 +73,7 @@ class Settings extends Page implements HasForms
                             ->columnSpanFull(),
                         Textarea::make('invoice_notes')->label('Catatan Invoice (S&K)')->columnSpanFull(),
                     ])->columns(2),
-                \Filament\Schemas\Components\Section::make('Informasi Rekening Pembayaran')
+                Section::make('Informasi Rekening Pembayaran')
                     ->schema([
                         Repeater::make('bank_accounts')
                             ->label('Daftar Rekening')
@@ -81,8 +82,8 @@ class Settings extends Page implements HasForms
                                 TextInput::make('account_number')->label('No. Rekening')->required(),
                                 TextInput::make('account_name')->label('Atas Nama')->required(),
                             ])
-                            ->columns(3)
-                    ])
+                            ->columns(3),
+                    ]),
             ])
             ->statePath('data');
     }
@@ -105,7 +106,7 @@ class Settings extends Page implements HasForms
         } else {
             Setting::create($data);
         }
-        
+
         Notification::make()
             ->title('Pengaturan berhasil disimpan')
             ->success()

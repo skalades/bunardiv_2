@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\AbsensiResource\Pages;
 use App\Models\Attendance;
 use App\Models\User;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -12,6 +13,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -20,6 +22,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 class AbsensiResource extends Resource
 {
@@ -28,6 +31,11 @@ class AbsensiResource extends Resource
     public static function canViewAny(): bool
     {
         return auth()->user()?->role === 'admin';
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['user.employeeProfile', 'pencatat']);
     }
 
     public static function getNavigationIcon(): string
@@ -84,7 +92,7 @@ class AbsensiResource extends Resource
                             ->label('Status Kehadiran')
                             ->options([
                                 'hadir' => 'Hadir',
-                                'izin'  => 'Izin',
+                                'izin' => 'Izin',
                                 'sakit' => 'Sakit',
                                 'alpha' => 'Alpha',
                             ])
@@ -120,7 +128,7 @@ class AbsensiResource extends Resource
                     ->badge()
                     ->color(fn ($state) => match ($state) {
                         'hadir' => 'success',
-                        'izin'  => 'warning',
+                        'izin' => 'warning',
                         'sakit' => 'info',
                         'alpha' => 'danger',
                         default => 'gray',
@@ -143,7 +151,7 @@ class AbsensiResource extends Resource
                 SelectFilter::make('status')
                     ->options([
                         'hadir' => 'Hadir',
-                        'izin'  => 'Izin',
+                        'izin' => 'Izin',
                         'sakit' => 'Sakit',
                         'alpha' => 'Alpha',
                     ]),
@@ -157,30 +165,30 @@ class AbsensiResource extends Resource
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    \Filament\Actions\BulkAction::make('set_hadir')
+                    BulkAction::make('set_hadir')
                         ->label('Tandai Hadir')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        ->action(function (Collection $records) {
                             $records->each->update(['status' => 'hadir', 'dicatat_oleh' => auth()->id()]);
-                            \Filament\Notifications\Notification::make()->title('Semua data terpilih diubah menjadi Hadir')->success()->send();
+                            Notification::make()->title('Semua data terpilih diubah menjadi Hadir')->success()->send();
                         }),
-                    \Filament\Actions\BulkAction::make('set_izin')
+                    BulkAction::make('set_izin')
                         ->label('Tandai Izin')
                         ->icon('heroicon-o-clock')
                         ->color('warning')
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        ->action(function (Collection $records) {
                             $records->each->update(['status' => 'izin', 'dicatat_oleh' => auth()->id()]);
-                            \Filament\Notifications\Notification::make()->title('Semua data terpilih diubah menjadi Izin')->warning()->send();
+                            Notification::make()->title('Semua data terpilih diubah menjadi Izin')->warning()->send();
                         }),
-                    \Filament\Actions\BulkAction::make('set_alpha')
+                    BulkAction::make('set_alpha')
                         ->label('Tandai Alpha')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        ->action(function (Collection $records) {
                             $records->each->update(['status' => 'alpha', 'dicatat_oleh' => auth()->id()]);
-                            \Filament\Notifications\Notification::make()->title('Semua data terpilih diubah menjadi Alpha')->danger()->send();
+                            Notification::make()->title('Semua data terpilih diubah menjadi Alpha')->danger()->send();
                         }),
                     DeleteBulkAction::make(),
                 ]),
@@ -190,9 +198,9 @@ class AbsensiResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListAbsensis::route('/'),
+            'index' => Pages\ListAbsensis::route('/'),
             'create' => Pages\CreateAbsensi::route('/create'),
-            'edit'   => Pages\EditAbsensi::route('/{record}/edit'),
+            'edit' => Pages\EditAbsensi::route('/{record}/edit'),
         ];
     }
 }

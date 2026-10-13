@@ -13,7 +13,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
@@ -95,7 +94,7 @@ class KaryawanResource extends Resource
                             ->label('Hak Akses Sistem')
                             ->options([
                                 'admin' => 'Admin',
-                                'crew'  => 'Crew / Lapangan',
+                                'crew' => 'Crew / Lapangan',
                             ])
                             ->default('crew')
                             ->required(),
@@ -115,7 +114,7 @@ class KaryawanResource extends Resource
                             ->label('Tipe Karyawan')
                             ->options([
                                 'bulanan' => 'Bulanan (Gaji Tetap)',
-                                'harian'  => 'Harian / Per Event',
+                                'harian' => 'Harian / Per Event',
                             ])
                             ->default('harian')
                             ->required()
@@ -174,8 +173,8 @@ class KaryawanResource extends Resource
                     ->badge()
                     ->color(fn ($state) => match ($state) {
                         'bulanan' => 'success',
-                        'harian'  => 'warning',
-                        default   => 'gray',
+                        'harian' => 'warning',
+                        default => 'gray',
                     })
                     ->formatStateUsing(fn ($state) => ucfirst($state ?? '-')),
                 TextColumn::make('employeeProfile.gaji_pokok')
@@ -196,7 +195,7 @@ class KaryawanResource extends Resource
                     ->relationship('employeeProfile', 'tipe')
                     ->options([
                         'bulanan' => 'Bulanan',
-                        'harian'  => 'Harian',
+                        'harian' => 'Harian',
                     ]),
             ])
             ->recordActions([
@@ -213,9 +212,9 @@ class KaryawanResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListKaryawans::route('/'),
+            'index' => Pages\ListKaryawans::route('/'),
             'create' => Pages\CreateKaryawan::route('/create'),
-            'edit'   => Pages\EditKaryawan::route('/{record}/edit'),
+            'edit' => Pages\EditKaryawan::route('/{record}/edit'),
         ];
     }
 }

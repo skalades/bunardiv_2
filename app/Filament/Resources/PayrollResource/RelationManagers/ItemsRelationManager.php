@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PayrollResource\RelationManagers;
 
+use App\Models\Payment;
 use App\Models\PayrollItem;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -35,12 +36,12 @@ class ItemsRelationManager extends RelationManager
                 return;
             }
 
-            $bonus        = (float) ($get('bonus') ?? 0);
-            $lembur       = (float) ($get('lembur') ?? 0);
+            $bonus = (float) ($get('bonus') ?? 0);
+            $lembur = (float) ($get('lembur') ?? 0);
             $potonganLain = (float) ($get('potongan_lain') ?? 0);
 
             $baseBruto = (float) $record->total_bruto - (float) ($record->bonus ?? 0) - (float) ($record->lembur ?? 0);
-            $newBruto  = max(0, $baseBruto + $bonus + $lembur);
+            $newBruto = max(0, $baseBruto + $bonus + $lembur);
             $newBersih = max(0, $newBruto - (float) $record->potongan_kasbon - $potonganLain);
 
             $set('total_bruto', $newBruto);
@@ -76,7 +77,7 @@ class ItemsRelationManager extends RelationManager
                     ->label('Status Pembayaran')
                     ->options([
                         'draft' => 'Draft / Belum Ditransfer',
-                        'paid'  => 'Sudah Dibayarkan (Lunas)',
+                        'paid' => 'Sudah Dibayarkan (Lunas)',
                     ])
                     ->required(),
                 DatePicker::make('tanggal_dibayar')
@@ -84,7 +85,7 @@ class ItemsRelationManager extends RelationManager
                     ->default(now()),
                 Select::make('metode_bayar')
                     ->label('Metode Pembayaran')
-                    ->options(fn () => \App\Models\Payment::getPaymentMethods())
+                    ->options(fn () => Payment::getPaymentMethods())
                     ->default('Transfer BCA'),
                 Textarea::make('catatan')
                     ->label('Catatan'),
@@ -110,8 +111,8 @@ class ItemsRelationManager extends RelationManager
                     ->label('Kehadiran / Event')
                     ->getStateUsing(function (PayrollItem $record) {
                         return $record->tipe_karyawan === 'bulanan'
-                            ? ($record->jumlah_hari_hadir . ' Hari')
-                            : ($record->jumlah_event_hadir . ' Event/SPK');
+                            ? ($record->jumlah_hari_hadir.' Hari')
+                            : ($record->jumlah_event_hadir.' Event/SPK');
                     }),
                 TextColumn::make('bonus')
                     ->label('Bonus')
@@ -165,25 +166,25 @@ class ItemsRelationManager extends RelationManager
                         DatePicker::make('tanggal_dibayar')->label('Tgl Bayar')->default(now())->required(),
                         Select::make('metode_bayar')
                             ->label('Metode Pembayaran')
-                            ->options(fn () => \App\Models\Payment::getPaymentMethods())
+                            ->options(fn () => Payment::getPaymentMethods())
                             ->default('Transfer BCA')
                             ->required(),
                     ])
                     ->action(function (PayrollItem $record, array $data) {
                         $record->update([
-                            'status'          => 'paid',
+                            'status' => 'paid',
                             'tanggal_dibayar' => $data['tanggal_dibayar'],
-                            'metode_bayar'    => $data['metode_bayar'],
+                            'metode_bayar' => $data['metode_bayar'],
                         ]);
                         Notification::make()->title('Gaji ditandai sudah dibayar')->success()->send();
                     }),
                 EditAction::make()
                     ->using(function (PayrollItem $record, array $data): PayrollItem {
-                        $baseBruto            = (float) $record->total_bruto - (float) ($record->bonus ?? 0) - (float) ($record->lembur ?? 0);
-                        $bonus                = (float) ($data['bonus'] ?? 0);
-                        $lembur               = (float) ($data['lembur'] ?? 0);
-                        $potonganLain         = (float) ($data['potongan_lain'] ?? 0);
-                        $data['total_bruto']  = max(0, $baseBruto + $bonus + $lembur);
+                        $baseBruto = (float) $record->total_bruto - (float) ($record->bonus ?? 0) - (float) ($record->lembur ?? 0);
+                        $bonus = (float) ($data['bonus'] ?? 0);
+                        $lembur = (float) ($data['lembur'] ?? 0);
+                        $potonganLain = (float) ($data['potongan_lain'] ?? 0);
+                        $data['total_bruto'] = max(0, $baseBruto + $bonus + $lembur);
                         $data['total_bersih'] = max(0, $data['total_bruto'] - (float) $record->potongan_kasbon - $potonganLain);
 
                         $record->update($data);
@@ -200,9 +201,9 @@ class ItemsRelationManager extends RelationManager
                         ->requiresConfirmation()
                         ->action(function (Collection $records) {
                             $records->each->update([
-                                'status'          => 'paid',
+                                'status' => 'paid',
                                 'tanggal_dibayar' => now()->toDateString(),
-                                'metode_bayar'    => 'Transfer Bank',
+                                'metode_bayar' => 'Transfer Bank',
                             ]);
                             Notification::make()->title('Semua gaji terpilih ditandai lunas')->success()->send();
                         }),

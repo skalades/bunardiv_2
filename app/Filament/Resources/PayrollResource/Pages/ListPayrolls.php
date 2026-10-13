@@ -5,7 +5,9 @@ namespace App\Filament\Resources\PayrollResource\Pages;
 use App\Filament\Resources\PayrollResource;
 use App\Services\PayrollService;
 use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 
@@ -24,18 +26,18 @@ class ListPayrolls extends ListRecords
                     Select::make('tipe_periode')
                         ->label('Tipe Payroll')
                         ->options([
-                            'harian'  => 'Harian (Per Hari / Event)',
+                            'harian' => 'Harian (Per Hari / Event)',
                             'bulanan' => 'Bulanan (Rekap Sebulan Penuh)',
                         ])
                         ->default('harian')
                         ->required()
                         ->live(),
-                    \Filament\Forms\Components\DatePicker::make('tanggal')
+                    DatePicker::make('tanggal')
                         ->label('Pilih Tanggal')
                         ->default(now())
                         ->required()
                         ->visible(fn ($get) => $get('tipe_periode') === 'harian'),
-                    \Filament\Forms\Components\Toggle::make('only_attended')
+                    Toggle::make('only_attended')
                         ->label('Hanya Karyawan yang Bertugas / Hadir')
                         ->helperText('Hanya masukkan kru yang hadir atau bertugas pada tanggal ini ke daftar slip gaji')
                         ->default(true)
@@ -43,15 +45,15 @@ class ListPayrolls extends ListRecords
                     Select::make('bulan')
                         ->label('Pilih Bulan')
                         ->options([
-                            1  => 'Januari',
-                            2  => 'Februari',
-                            3  => 'Maret',
-                            4  => 'April',
-                            5  => 'Mei',
-                            6  => 'Juni',
-                            7  => 'Juli',
-                            8  => 'Agustus',
-                            9  => 'September',
+                            1 => 'Januari',
+                            2 => 'Februari',
+                            3 => 'Maret',
+                            4 => 'April',
+                            5 => 'Mei',
+                            6 => 'Juni',
+                            7 => 'Juli',
+                            8 => 'Agustus',
+                            9 => 'September',
                             10 => 'Oktober',
                             11 => 'November',
                             12 => 'Desember',
@@ -93,7 +95,7 @@ class ListPayrolls extends ListRecords
                         $this->redirect(PayrollResource::getUrl('edit', ['record' => $payroll]));
                     } catch (\Throwable $e) {
                         Notification::make()
-                            ->title('Gagal: ' . $e->getMessage())
+                            ->title('Gagal: '.$e->getMessage())
                             ->danger()
                             ->send();
                     }

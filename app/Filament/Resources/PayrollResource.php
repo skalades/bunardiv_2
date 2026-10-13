@@ -19,6 +19,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class PayrollResource extends Resource
 {
@@ -27,6 +28,11 @@ class PayrollResource extends Resource
     public static function canViewAny(): bool
     {
         return auth()->user()?->role === 'admin';
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->withSum('items', 'total_bersih');
     }
 
     public static function getNavigationIcon(): string
@@ -69,7 +75,7 @@ class PayrollResource extends Resource
                         Select::make('tipe_periode')
                             ->label('Tipe Payroll')
                             ->options([
-                                'harian'  => 'Harian',
+                                'harian' => 'Harian',
                                 'bulanan' => 'Bulanan',
                             ])
                             ->disabled(),
@@ -80,15 +86,15 @@ class PayrollResource extends Resource
                         Select::make('bulan')
                             ->label('Bulan')
                             ->options([
-                                1  => 'Januari',
-                                2  => 'Februari',
-                                3  => 'Maret',
-                                4  => 'April',
-                                5  => 'Mei',
-                                6  => 'Juni',
-                                7  => 'Juli',
-                                8  => 'Agustus',
-                                9  => 'September',
+                                1 => 'Januari',
+                                2 => 'Februari',
+                                3 => 'Maret',
+                                4 => 'April',
+                                5 => 'Mei',
+                                6 => 'Juni',
+                                7 => 'Juli',
+                                8 => 'Agustus',
+                                9 => 'September',
                                 10 => 'Oktober',
                                 11 => 'November',
                                 12 => 'Desember',
@@ -138,7 +144,7 @@ class PayrollResource extends Resource
                     ->color('info'),
                 TextColumn::make('total_bersih')
                     ->label('Total Penggajian')
-                    ->getStateUsing(fn (Payroll $record) => $record->items->sum('total_bersih'))
+                    ->getStateUsing(fn (Payroll $record) => $record->items_sum_total_bersih ?? $record->items->sum('total_bersih'))
                     ->money('idr', decimalPlaces: 0)
                     ->weight('bold')
                     ->color('success'),
@@ -160,7 +166,7 @@ class PayrollResource extends Resource
                 SelectFilter::make('tipe_periode')
                     ->label('Tipe Periode')
                     ->options([
-                        'harian'  => 'Harian',
+                        'harian' => 'Harian',
                         'bulanan' => 'Bulanan',
                     ]),
                 SelectFilter::make('status')
@@ -187,7 +193,7 @@ class PayrollResource extends Resource
                                 ->send();
                         } catch (\Throwable $e) {
                             Notification::make()
-                                ->title('Gagal finalisasi: ' . $e->getMessage())
+                                ->title('Gagal finalisasi: '.$e->getMessage())
                                 ->danger()
                                 ->send();
                         }
@@ -208,7 +214,7 @@ class PayrollResource extends Resource
     {
         return [
             'index' => Pages\ListPayrolls::route('/'),
-            'edit'  => Pages\EditPayroll::route('/{record}/edit'),
+            'edit' => Pages\EditPayroll::route('/{record}/edit'),
         ];
     }
 }

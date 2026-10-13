@@ -13,7 +13,7 @@ class EmployeeLoanPayment extends Model
     ];
 
     protected $casts = [
-        'tanggal'      => 'date',
+        'tanggal' => 'date',
         'jumlah_bayar' => 'decimal:2',
     ];
 
@@ -37,11 +37,24 @@ class EmployeeLoanPayment extends Model
     {
         static::created(function (self $payment) {
             $loan = $payment->loan;
-            $loan->sisa_hutang = max(0, $loan->sisa_hutang - $payment->jumlah_bayar);
-            if ($loan->sisa_hutang <= 0) {
-                $loan->status = 'lunas';
+            if ($loan) {
+                $loan->sisa_hutang = max(0, $loan->sisa_hutang - $payment->jumlah_bayar);
+                if ($loan->sisa_hutang <= 0) {
+                    $loan->status = 'lunas';
+                }
+                $loan->save();
             }
-            $loan->save();
+        });
+
+        static::deleted(function (self $payment) {
+            $loan = $payment->loan;
+            if ($loan) {
+                $loan->sisa_hutang = min($loan->jumlah, $loan->sisa_hutang + $payment->jumlah_bayar);
+                if ($loan->sisa_hutang > 0 && $loan->status === 'lunas') {
+                    $loan->status = 'disetujui';
+                }
+                $loan->save();
+            }
         });
     }
 }

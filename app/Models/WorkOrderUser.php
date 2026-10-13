@@ -21,8 +21,8 @@ class WorkOrderUser extends Model
     ];
 
     protected $casts = [
-        'hadir'        => 'boolean',
-        'waktu_absen'  => 'datetime',
+        'hadir' => 'boolean',
+        'waktu_absen' => 'datetime',
         'upah_dibayar' => 'decimal:2',
     ];
 

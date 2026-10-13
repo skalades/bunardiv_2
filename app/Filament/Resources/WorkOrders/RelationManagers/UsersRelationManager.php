@@ -2,17 +2,29 @@
 
 namespace App\Filament\Resources\WorkOrders\RelationManagers;
 
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
-use Filament\Schemas\Schema;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 
 class UsersRelationManager extends RelationManager
 {
     protected static string $relationship = 'users';
+
     protected static ?string $title = 'Penugasan Petugas / Tim';
+
     protected static ?string $modelLabel = 'Petugas';
+
     protected static ?string $pluralModelLabel = 'Petugas';
 
     public function form(Schema $schema): Schema
@@ -70,7 +82,7 @@ class UsersRelationManager extends RelationManager
                 Tables\Filters\TernaryFilter::make('hadir')->label('Kehadiran'),
             ])
             ->headerActions([
-                \Filament\Actions\Action::make('mark_all_present')
+                Action::make('mark_all_present')
                     ->label('Tandai Semua Hadir')
                     ->icon('heroicon-o-check-badge')
                     ->color('success')
@@ -80,48 +92,48 @@ class UsersRelationManager extends RelationManager
                     ->action(function () {
                         $wo = $this->getOwnerRecord();
                         $wo->users()->update([
-                            'hadir'             => true,
-                            'waktu_absen'       => now(),
-                            'catatan_kehadiran' => 'Presensi massal oleh Admin pada ' . now()->format('d M Y H:i') . ' WIB',
+                            'hadir' => true,
+                            'waktu_absen' => now(),
+                            'catatan_kehadiran' => 'Presensi massal oleh Admin pada '.now()->format('d M Y H:i').' WIB',
                         ]);
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title('Semua petugas berhasil ditandai Hadir.')
                             ->success()
                             ->send();
                     }),
-                \Filament\Actions\CreateAction::make()->label('Tambah Petugas'),
+                CreateAction::make()->label('Tambah Petugas'),
             ])
             ->actions([
-                \Filament\Actions\EditAction::make(),
-                \Filament\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                \Filament\Actions\BulkActionGroup::make([
-                    \Filament\Actions\BulkAction::make('set_hadir_crew')
+                BulkActionGroup::make([
+                    BulkAction::make('set_hadir_crew')
                         ->label('Tandai Hadir')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        ->action(function (Collection $records) {
                             $records->each->update([
-                                'hadir'             => true,
-                                'waktu_absen'       => now(),
-                                'catatan_kehadiran' => 'Presensi massal oleh Admin pada ' . now()->format('d M Y H:i') . ' WIB',
+                                'hadir' => true,
+                                'waktu_absen' => now(),
+                                'catatan_kehadiran' => 'Presensi massal oleh Admin pada '.now()->format('d M Y H:i').' WIB',
                             ]);
-                            \Filament\Notifications\Notification::make()->title('Petugas terpilih ditandai Hadir')->success()->send();
+                            Notification::make()->title('Petugas terpilih ditandai Hadir')->success()->send();
                         }),
-                    \Filament\Actions\BulkAction::make('set_tidak_hadir_crew')
+                    BulkAction::make('set_tidak_hadir_crew')
                         ->label('Tandai Tidak Hadir')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                        ->action(function (Collection $records) {
                             $records->each->update([
-                                'hadir'             => false,
-                                'waktu_absen'       => null,
+                                'hadir' => false,
+                                'waktu_absen' => null,
                                 'catatan_kehadiran' => null,
                             ]);
-                            \Filament\Notifications\Notification::make()->title('Petugas terpilih ditandai Tidak Hadir')->warning()->send();
+                            Notification::make()->title('Petugas terpilih ditandai Tidak Hadir')->warning()->send();
                         }),
-                    \Filament\Actions\DeleteBulkAction::make(),
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }

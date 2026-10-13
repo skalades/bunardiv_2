@@ -69,7 +69,7 @@ class ProductResource extends Resource
                         Select::make('kategori')
                             ->label('Kategori Layanan')
                             ->options([
-                                'CATERING'   => 'Catering (Makanan, Prasmanan, Snack)',
+                                'CATERING' => 'Catering (Makanan, Prasmanan, Snack)',
                                 'DECORATION' => 'Decoration (Pelaminan, Tenda, Sound, Properti)',
                             ])
                             ->default('CATERING')
@@ -104,9 +104,9 @@ class ProductResource extends Resource
                     ->label('Kategori')
                     ->badge()
                     ->color(fn (string $state): string => match (strtoupper($state)) {
-                        'CATERING'   => 'warning',
+                        'CATERING' => 'warning',
                         'DECORATION' => 'info',
-                        default      => 'gray',
+                        default => 'gray',
                     })
                     ->sortable(),
 
@@ -126,7 +126,7 @@ class ProductResource extends Resource
                 SelectFilter::make('kategori')
                     ->label('Filter Kategori')
                     ->options([
-                        'CATERING'   => 'Catering',
+                        'CATERING' => 'Catering',
                         'DECORATION' => 'Decoration',
                     ]),
             ])
@@ -149,9 +149,9 @@ class ProductResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListProducts::route('/'),
+            'index' => Pages\ListProducts::route('/'),
             'create' => Pages\CreateProduct::route('/create'),
-            'edit'   => Pages\EditProduct::route('/{record}/edit'),
+            'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
     }
 }

@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class WorkOrder extends Model
 {
@@ -22,17 +21,30 @@ class WorkOrder extends Model
         'catatan',
     ];
 
+    protected $casts = [
+        'tanggal_persiapan' => 'date',
+    ];
+
     protected static function booted()
     {
         static::creating(function ($workOrder) {
+            $todayStr = now()->format('Ymd');
             if (empty($workOrder->spk_number)) {
-                $count = static::whereDate('created_at', now()->toDateString())->count() + 1;
-                $workOrder->spk_number = 'SPK-' . now()->format('Ymd') . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+                $last = static::where('spk_number', 'like', "SPK-{$todayStr}-%")->latest('id')->first();
+                $seq = 1;
+                if ($last && preg_match('/-(\d+)$/', $last->spk_number, $m)) {
+                    $seq = (int) $m[1] + 1;
+                }
+                $workOrder->spk_number = sprintf('SPK-%s-%04d', $todayStr, $seq);
             }
 
             if (empty($workOrder->surat_jalan_number)) {
-                $count = static::whereDate('created_at', now()->toDateString())->count() + 1;
-                $workOrder->surat_jalan_number = 'SJ-' . now()->format('Ymd') . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+                $lastSj = static::where('surat_jalan_number', 'like', "SJ-{$todayStr}-%")->latest('id')->first();
+                $seqSj = 1;
+                if ($lastSj && preg_match('/-(\d+)$/', $lastSj->surat_jalan_number, $m)) {
+                    $seqSj = (int) $m[1] + 1;
+                }
+                $workOrder->surat_jalan_number = sprintf('SJ-%s-%04d', $todayStr, $seqSj);
             }
         });
 

@@ -3,6 +3,12 @@
 namespace App\Filament\Resources\WorkOrders\RelationManagers;
 
 use App\Models\WorkOrderEquipment;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -13,8 +19,11 @@ use Filament\Tables\Table;
 class EquipmentRelationManager extends RelationManager
 {
     protected static string $relationship = 'equipment';
+
     protected static ?string $title = 'Peralatan';
+
     protected static ?string $modelLabel = 'Peralatan';
+
     protected static ?string $pluralModelLabel = 'Peralatan';
 
     public function form(Schema $schema): Schema
@@ -34,8 +43,8 @@ class EquipmentRelationManager extends RelationManager
                     ->label('Jumlah'),
                 Forms\Components\Select::make('status')
                     ->options([
-                        'disiapkan'    => 'Disiapkan',
-                        'dipinjam'     => 'Dipinjam / Digunakan',
+                        'disiapkan' => 'Disiapkan',
+                        'dipinjam' => 'Dipinjam / Digunakan',
                         'dikembalikan' => 'Dikembalikan',
                     ])
                     ->required()
@@ -69,23 +78,23 @@ class EquipmentRelationManager extends RelationManager
                     ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'disiapkan'    => 'warning',
-                        'dipinjam'     => 'info',
+                        'disiapkan' => 'warning',
+                        'dipinjam' => 'info',
                         'dikembalikan' => 'success',
-                        default        => 'gray',
+                        default => 'gray',
                     }),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'disiapkan'    => 'Disiapkan',
-                        'dipinjam'     => 'Dipinjam / Digunakan',
+                        'disiapkan' => 'Disiapkan',
+                        'dipinjam' => 'Dipinjam / Digunakan',
                         'dikembalikan' => 'Dikembalikan',
                     ]),
             ])
             ->headerActions([
                 // AKSI UTAMA: Mode POS / Katalog Barang
-                \Filament\Actions\Action::make('pos_equipment')
+                Action::make('pos_equipment')
                     ->label('+ Pilih Peralatan (Mode POS)')
                     ->icon('heroicon-o-squares-plus')
                     ->color('warning')
@@ -100,8 +109,8 @@ class EquipmentRelationManager extends RelationManager
                         Forms\Components\Select::make('default_status')
                             ->label('Status untuk Semua Peralatan yang Dipilih')
                             ->options([
-                                'disiapkan'    => 'Disiapkan',
-                                'dipinjam'     => 'Dipinjam / Digunakan',
+                                'disiapkan' => 'Disiapkan',
+                                'dipinjam' => 'Dipinjam / Digunakan',
                                 'dikembalikan' => 'Dikembalikan',
                             ])
                             ->default('disiapkan')
@@ -114,6 +123,7 @@ class EquipmentRelationManager extends RelationManager
                                 ->title('Tidak ada peralatan yang dipilih')
                                 ->warning()
                                 ->send();
+
                             return;
                         }
 
@@ -137,9 +147,9 @@ class EquipmentRelationManager extends RelationManager
                             } else {
                                 WorkOrderEquipment::create([
                                     'work_order_id' => $workOrder->id,
-                                    'inventory_id'  => $invId,
-                                    'jumlah'        => $qty,
-                                    'status'        => $status,
+                                    'inventory_id' => $invId,
+                                    'jumlah' => $qty,
+                                    'status' => $status,
                                 ]);
                             }
                             $countAdded++;
@@ -152,18 +162,18 @@ class EquipmentRelationManager extends RelationManager
                     }),
 
                 // Cadangan: Input Manual per 1 barang jika diperlukan
-                \Filament\Actions\CreateAction::make()
+                CreateAction::make()
                     ->label('Input Manual (1 Barang)')
                     ->icon('heroicon-o-plus')
                     ->color('gray'),
             ])
             ->actions([
-                \Filament\Actions\EditAction::make(),
-                \Filament\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                \Filament\Actions\BulkActionGroup::make([
-                    \Filament\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }

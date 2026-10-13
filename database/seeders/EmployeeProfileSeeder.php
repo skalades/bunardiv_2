@@ -2,14 +2,13 @@
 
 namespace Database\Seeders;
 
-use App\Models\Attendance;
 use App\Models\EmployeeLoan;
 use App\Models\EmployeeLoanPayment;
 use App\Models\EmployeeProfile;
+use App\Models\Order;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderUser;
-use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -27,16 +26,16 @@ class EmployeeProfileSeeder extends Seeder
         EmployeeProfile::updateOrCreate(
             ['user_id' => $budi->id],
             [
-                'nik'                 => 'EMP-001',
-                'jabatan'             => 'Koordinator Lapangan & Dekorasi',
-                'tipe'                => 'bulanan',
-                'gaji_pokok'          => 3500000,
-                'upah_per_event'      => null,
+                'nik' => 'EMP-001',
+                'jabatan' => 'Koordinator Lapangan & Dekorasi',
+                'tipe' => 'bulanan',
+                'gaji_pokok' => 3500000,
+                'upah_per_event' => null,
                 'tunjangan_transport' => 300000,
-                'tunjangan_makan'     => 200000,
-                'no_hp'               => '081234567890',
-                'tanggal_bergabung'   => '2024-01-15',
-                'status_aktif'        => true,
+                'tunjangan_makan' => 200000,
+                'no_hp' => '081234567890',
+                'tanggal_bergabung' => '2024-01-15',
+                'status_aktif' => true,
             ]
         );
 
@@ -48,16 +47,16 @@ class EmployeeProfileSeeder extends Seeder
         EmployeeProfile::updateOrCreate(
             ['user_id' => $siti->id],
             [
-                'nik'                 => 'EMP-002',
-                'jabatan'             => 'Kepala Dapur & Catering',
-                'tipe'                => 'bulanan',
-                'gaji_pokok'          => 3200000,
-                'upah_per_event'      => null,
+                'nik' => 'EMP-002',
+                'jabatan' => 'Kepala Dapur & Catering',
+                'tipe' => 'bulanan',
+                'gaji_pokok' => 3200000,
+                'upah_per_event' => null,
                 'tunjangan_transport' => 250000,
-                'tunjangan_makan'     => 250000,
-                'no_hp'               => '081298765432',
-                'tanggal_bergabung'   => '2024-03-01',
-                'status_aktif'        => true,
+                'tunjangan_makan' => 250000,
+                'no_hp' => '081298765432',
+                'tanggal_bergabung' => '2024-03-01',
+                'status_aktif' => true,
             ]
         );
 
@@ -69,16 +68,16 @@ class EmployeeProfileSeeder extends Seeder
         EmployeeProfile::updateOrCreate(
             ['user_id' => $agus->id],
             [
-                'nik'                 => 'EMP-003',
-                'jabatan'             => 'Crew Dekorasi',
-                'tipe'                => 'harian',
-                'gaji_pokok'          => 150000,
-                'upah_per_event'      => 175000,
+                'nik' => 'EMP-003',
+                'jabatan' => 'Crew Dekorasi',
+                'tipe' => 'harian',
+                'gaji_pokok' => 150000,
+                'upah_per_event' => 175000,
                 'tunjangan_transport' => 0,
-                'tunjangan_makan'     => 25000,
-                'no_hp'               => '085712345678',
-                'tanggal_bergabung'   => '2024-05-10',
-                'status_aktif'        => true,
+                'tunjangan_makan' => 25000,
+                'no_hp' => '085712345678',
+                'tanggal_bergabung' => '2024-05-10',
+                'status_aktif' => true,
             ]
         );
 
@@ -90,16 +89,16 @@ class EmployeeProfileSeeder extends Seeder
         EmployeeProfile::updateOrCreate(
             ['user_id' => $rian->id],
             [
-                'nik'                 => 'EMP-004',
-                'jabatan'             => 'Crew Catering & Waiter',
-                'tipe'                => 'harian',
-                'gaji_pokok'          => 120000,
-                'upah_per_event'      => 150000,
+                'nik' => 'EMP-004',
+                'jabatan' => 'Crew Catering & Waiter',
+                'tipe' => 'harian',
+                'gaji_pokok' => 120000,
+                'upah_per_event' => 150000,
                 'tunjangan_transport' => 0,
-                'tunjangan_makan'     => 25000,
-                'no_hp'               => '087812345678',
-                'tanggal_bergabung'   => '2024-06-01',
-                'status_aktif'        => true,
+                'tunjangan_makan' => 25000,
+                'no_hp' => '087812345678',
+                'tanggal_bergabung' => '2024-06-01',
+                'status_aktif' => true,
             ]
         );
 
@@ -107,14 +106,14 @@ class EmployeeProfileSeeder extends Seeder
         $loanAgus = EmployeeLoan::firstOrCreate(
             ['user_id' => $agus->id, 'jumlah' => 500000],
             [
-                'sisa_hutang'       => 500000,
+                'sisa_hutang' => 500000,
                 'tanggal_pengajuan' => now()->subDays(10)->toDateString(),
                 'tanggal_disetujui' => now()->subDays(9)->toDateString(),
-                'status'            => 'disetujui',
-                'metode_cicilan'    => 'auto_potong_gaji',
+                'status' => 'disetujui',
+                'metode_cicilan' => 'auto_potong_gaji',
                 'cicilan_per_bulan' => 250000,
-                'disetujui_oleh'    => $admin?->id,
-                'catatan'           => 'Kasbon servis motor',
+                'disetujui_oleh' => $admin?->id,
+                'catatan' => 'Kasbon servis motor',
             ]
         );
 
@@ -122,14 +121,14 @@ class EmployeeProfileSeeder extends Seeder
         $loanBudi = EmployeeLoan::firstOrCreate(
             ['user_id' => $budi->id, 'jumlah' => 1000000],
             [
-                'sisa_hutang'       => 1000000,
+                'sisa_hutang' => 1000000,
                 'tanggal_pengajuan' => now()->subDays(20)->toDateString(),
                 'tanggal_disetujui' => now()->subDays(19)->toDateString(),
-                'status'            => 'disetujui',
-                'metode_cicilan'    => 'manual',
+                'status' => 'disetujui',
+                'metode_cicilan' => 'manual',
                 'cicilan_per_bulan' => null,
-                'disetujui_oleh'    => $admin?->id,
-                'catatan'           => 'Kasbon renovasi rumah',
+                'disetujui_oleh' => $admin?->id,
+                'catatan' => 'Kasbon renovasi rumah',
             ]
         );
 
@@ -137,24 +136,24 @@ class EmployeeProfileSeeder extends Seeder
         if ($loanBudi->payments()->count() === 0) {
             EmployeeLoanPayment::create([
                 'employee_loan_id' => $loanBudi->id,
-                'jumlah_bayar'     => 300000,
-                'tanggal'          => now()->subDays(5)->toDateString(),
-                'sumber'           => 'manual',
-                'dicatat_oleh'     => $admin?->id,
-                'catatan'          => 'Cicilan 1 via transfer',
+                'jumlah_bayar' => 300000,
+                'tanggal' => now()->subDays(5)->toDateString(),
+                'sumber' => 'manual',
+                'dicatat_oleh' => $admin?->id,
+                'catatan' => 'Cicilan 1 via transfer',
             ]);
         }
 
         // 7. Penugasan Agus & Rian ke WorkOrder aktif (Belum Hadir, siap ditest absensi)
-        $order = \App\Models\Order::first();
+        $order = Order::first();
         if ($order) {
             $wo = WorkOrder::firstOrCreate(
                 ['order_id' => $order->id],
                 [
-                    'pic_id'            => $admin?->id ?? 1,
+                    'pic_id' => $admin?->id ?? 1,
                     'tanggal_persiapan' => now()->toDateString(),
-                    'status'            => 'confirmed',
-                    'catatan'           => 'Persiapan acara dekorasi & catering',
+                    'status' => 'confirmed',
+                    'catatan' => 'Persiapan acara dekorasi & catering',
                 ]
             );
 

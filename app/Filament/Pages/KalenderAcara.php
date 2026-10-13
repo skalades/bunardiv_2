@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Order;
 use App\Models\WorkOrder;
 use Carbon\Carbon;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
 
@@ -41,16 +42,24 @@ class KalenderAcara extends Page
 
     // State properties
     public int $year;
+
     public int $month;
+
     public string $viewMode = 'month'; // 'month', 'week', 'agenda'
+
     public string $filterStatus = 'all';
+
     public string $filterJenis = 'all';
+
     public string $search = '';
+
     public bool $showPrepDates = true;
 
     // Selected items for modal and day-panel
     public ?int $selectedOrderId = null;
+
     public ?string $selectedDate = null;
+
     public int $weekOffset = 0;
 
     public function mount(): void
@@ -133,7 +142,7 @@ class KalenderAcara extends Page
             $noOrder = $order->no_order;
             $order->delete();
             $this->closeModal();
-            \Filament\Notifications\Notification::make()
+            Notification::make()
                 ->title("Pesanan {$noOrder} berhasil dihapus")
                 ->success()
                 ->send();
@@ -145,10 +154,10 @@ class KalenderAcara extends Page
         $months = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
             5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
 
-        return ($months[$this->month] ?? '') . ' ' . $this->year;
+        return ($months[$this->month] ?? '').' '.$this->year;
     }
 
     public function getAvailableMonthsProperty(): array
@@ -156,7 +165,7 @@ class KalenderAcara extends Page
         return [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
             5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
     }
 
@@ -167,6 +176,7 @@ class KalenderAcara extends Page
         for ($y = $currentYear - 2; $y <= $currentYear + 3; $y++) {
             $years[] = $y;
         }
+
         return $years;
     }
 
@@ -194,16 +204,16 @@ class KalenderAcara extends Page
             $query->where('jenis_acara', $this->filterJenis);
         }
 
-        if (!empty(trim($this->search))) {
-            $term = '%' . trim($this->search) . '%';
+        if (! empty(trim($this->search))) {
+            $term = '%'.trim($this->search).'%';
             $query->where(function ($q) use ($term) {
                 $q->where('nama_acara', 'like', $term)
-                  ->orWhere('no_order', 'like', $term)
-                  ->orWhere('venue', 'like', $term)
-                  ->orWhereHas('customer', function ($cq) use ($term) {
-                      $cq->where('nama', 'like', $term)
-                         ->orWhere('no_telp', 'like', $term);
-                  });
+                    ->orWhere('no_order', 'like', $term)
+                    ->orWhere('venue', 'like', $term)
+                    ->orWhereHas('customer', function ($cq) use ($term) {
+                        $cq->where('nama', 'like', $term)
+                            ->orWhere('no_telp', 'like', $term);
+                    });
             });
         }
 
@@ -228,7 +238,7 @@ class KalenderAcara extends Page
         $batalCount = $monthlyOrders->filter(fn ($o) => strtolower($o->status) === 'dibatalkan')->count();
 
         // Detect high-workload days (dates with >= 2 events)
-        $peakDates = $monthlyOrders->groupBy('tanggal')
+        $peakDates = $monthlyOrders->groupBy(fn ($o) => $o->tanggal ? Carbon::parse($o->tanggal)->toDateString() : '')
             ->filter(fn ($group) => $group->count() >= 2)
             ->keys()
             ->toArray();
@@ -260,7 +270,7 @@ class KalenderAcara extends Page
             ->whereBetween('tanggal', [$startOfGrid->toDateString(), $endOfGrid->toDateString()])
             ->orderBy('jam', 'asc')
             ->get()
-            ->groupBy('tanggal');
+            ->groupBy(fn ($o) => $o->tanggal ? Carbon::parse($o->tanggal)->toDateString() : '');
 
         // Query work order prep dates if enabled
         $prepWorkOrders = collect();
@@ -268,7 +278,7 @@ class KalenderAcara extends Page
             $prepWorkOrders = WorkOrder::with(['order.customer', 'pic'])
                 ->whereBetween('tanggal_persiapan', [$startOfGrid->toDateString(), $endOfGrid->toDateString()])
                 ->get()
-                ->groupBy('tanggal_persiapan');
+                ->groupBy(fn ($w) => $w->tanggal_persiapan ? Carbon::parse($w->tanggal_persiapan)->toDateString() : '');
         }
 
         $weeks = [];
@@ -320,14 +330,14 @@ class KalenderAcara extends Page
             ->whereBetween('tanggal', [$startOfWeek->toDateString(), $endOfWeek->toDateString()])
             ->orderBy('jam', 'asc')
             ->get()
-            ->groupBy('tanggal');
+            ->groupBy(fn ($o) => $o->tanggal ? Carbon::parse($o->tanggal)->toDateString() : '');
 
         $prepWorkOrders = collect();
         if ($this->showPrepDates) {
             $prepWorkOrders = WorkOrder::with(['order.customer', 'pic'])
                 ->whereBetween('tanggal_persiapan', [$startOfWeek->toDateString(), $endOfWeek->toDateString()])
                 ->get()
-                ->groupBy('tanggal_persiapan');
+                ->groupBy(fn ($w) => $w->tanggal_persiapan ? Carbon::parse($w->tanggal_persiapan)->toDateString() : '');
         }
 
         $days = [];
@@ -375,7 +385,7 @@ class KalenderAcara extends Page
      */
     public function getSelectedOrderDataProperty(): ?Order
     {
-        if (!$this->selectedOrderId) {
+        if (! $this->selectedOrderId) {
             return null;
         }
 
@@ -386,7 +396,7 @@ class KalenderAcara extends Page
             'invoices',
             'workOrders.pic',
             'workOrders.users.user',
-            'workOrders.equipment.inventory'
+            'workOrders.equipment.inventory',
         ])->find($this->selectedOrderId);
     }
 
@@ -395,12 +405,12 @@ class KalenderAcara extends Page
      */
     public function getSelectedDateEventsProperty(): Collection
     {
-        if (!$this->selectedDate) {
+        if (! $this->selectedDate) {
             return collect();
         }
 
         return $this->getFilteredOrdersQuery()
-            ->where('tanggal', $this->selectedDate)
+            ->whereDate('tanggal', $this->selectedDate)
             ->orderBy('jam', 'asc')
             ->get();
     }

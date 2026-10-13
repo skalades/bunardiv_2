@@ -48,7 +48,9 @@ class LaporanKeuangan extends Page
 
     // State Filter
     public int $year;
+
     public string $month = 'all'; // 'all' or '1'..'12'
+
     public string $viewMode = 'kas'; // 'kas' (Arus Kas Diterima) atau 'akrual' (Nilai Kontrak Pesanan)
 
     public function mount(): void
@@ -81,6 +83,7 @@ class LaporanKeuangan extends Page
         for ($y = $currentYear - 2; $y <= $currentYear + 2; $y++) {
             $years[] = $y;
         }
+
         return $years;
     }
 
@@ -88,29 +91,30 @@ class LaporanKeuangan extends Page
     {
         return [
             'all' => 'Semua Bulan (Setahun Penuh)',
-            '1'   => 'Januari',
-            '2'   => 'Februari',
-            '3'   => 'Maret',
-            '4'   => 'April',
-            '5'   => 'Mei',
-            '6'   => 'Juni',
-            '7'   => 'Juli',
-            '8'   => 'Agustus',
-            '9'   => 'September',
-            '10'  => 'Oktober',
-            '11'  => 'November',
-            '12'  => 'Desember',
+            '1' => 'Januari',
+            '2' => 'Februari',
+            '3' => 'Maret',
+            '4' => 'April',
+            '5' => 'Mei',
+            '6' => 'Juni',
+            '7' => 'Juli',
+            '8' => 'Agustus',
+            '9' => 'September',
+            '10' => 'Oktober',
+            '11' => 'November',
+            '12' => 'Desember',
         ];
     }
 
     public function getPeriodeLabelProperty(): string
     {
         if ($this->month === 'all') {
-            return 'Tahun ' . $this->year;
+            return 'Tahun '.$this->year;
         }
 
         $months = $this->getAvailableMonthsProperty();
-        return ($months[$this->month] ?? '') . ' ' . $this->year;
+
+        return ($months[$this->month] ?? '').' '.$this->year;
     }
 
     /**
@@ -166,18 +170,18 @@ class LaporanKeuangan extends Page
         $netCashFlow = $totalKasMasuk - $totalBeban;
 
         return [
-            'totalNilaiOrder'       => $totalNilaiOrder,
-            'totalOrderCount'       => $totalOrderCount,
-            'totalKasMasuk'         => $totalKasMasuk,
-            'piutangBerjalan'       => $piutangBerjalan,
+            'totalNilaiOrder' => $totalNilaiOrder,
+            'totalOrderCount' => $totalOrderCount,
+            'totalKasMasuk' => $totalKasMasuk,
+            'piutangBerjalan' => $piutangBerjalan,
             'totalBebanOperasional' => $totalBebanOperasional,
-            'totalBebanPayroll'     => $totalBebanPayroll,
-            'totalBeban'            => $totalBeban,
-            'labaBersih'            => $labaBersih,
-            'profitMargin'          => $profitMargin,
-            'collectionRate'        => $collectionRate,
-            'expenseRatio'          => $expenseRatio,
-            'netCashFlow'           => $netCashFlow,
+            'totalBebanPayroll' => $totalBebanPayroll,
+            'totalBeban' => $totalBeban,
+            'labaBersih' => $labaBersih,
+            'profitMargin' => $profitMargin,
+            'collectionRate' => $collectionRate,
+            'expenseRatio' => $expenseRatio,
+            'netCashFlow' => $netCashFlow,
         ];
     }
 
@@ -187,6 +191,8 @@ class LaporanKeuangan extends Page
     public function getMonthlyChartDataProperty(): array
     {
         $months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        $summary = $this->monthlySummary;
+
         $kasMasuk = [];
         $nilaiOrder = [];
         $bebanOps = [];
@@ -195,33 +201,24 @@ class LaporanKeuangan extends Page
         $labaBersihKas = [];
         $labaBersihAkrual = [];
 
-        for ($m = 1; $m <= 12; $m++) {
-            $inflow = (float) Payment::whereYear('payment_date', $this->year)->whereMonth('payment_date', $m)->sum('amount');
-            $orderVal = (float) Order::whereYear('tanggal', $this->year)->whereMonth('tanggal', $m)->sum('total');
-            $ops = (float) Expense::whereYear('tanggal', $this->year)->whereMonth('tanggal', $m)->sum('nominal');
-            $pay = (float) PayrollItem::whereHas('payroll', function ($q) use ($m) {
-                $q->whereYear('created_at', $this->year)->whereMonth('created_at', $m);
-            })->sum('total_bersih');
-
-            $totBeban = $ops + $pay;
-
-            $kasMasuk[] = $inflow;
-            $nilaiOrder[] = $orderVal;
-            $bebanOps[] = $ops;
-            $bebanPayroll[] = $pay;
-            $totalBeban[] = $totBeban;
-            $labaBersihKas[] = $inflow - $totBeban;
-            $labaBersihAkrual[] = $orderVal - $totBeban;
+        foreach ($summary as $row) {
+            $kasMasuk[] = $row['kas_masuk'];
+            $nilaiOrder[] = $row['nilai_order'];
+            $bebanOps[] = $row['beban_ops'];
+            $bebanPayroll[] = $row['beban_gaji'];
+            $totalBeban[] = $row['total_beban'];
+            $labaBersihKas[] = $row['kas_masuk'] - $row['total_beban'];
+            $labaBersihAkrual[] = $row['nilai_order'] - $row['total_beban'];
         }
 
         return [
-            'labels'           => $months,
-            'kasMasuk'         => $kasMasuk,
-            'nilaiOrder'       => $nilaiOrder,
-            'bebanOps'         => $bebanOps,
-            'bebanPayroll'     => $bebanPayroll,
-            'totalBeban'       => $totalBeban,
-            'labaBersihKas'    => $labaBersihKas,
+            'labels' => $months,
+            'kasMasuk' => $kasMasuk,
+            'nilaiOrder' => $nilaiOrder,
+            'bebanOps' => $bebanOps,
+            'bebanPayroll' => $bebanPayroll,
+            'totalBeban' => $totalBeban,
+            'labaBersihKas' => $labaBersihKas,
             'labaBersihAkrual' => $labaBersihAkrual,
         ];
     }
@@ -292,9 +289,9 @@ class LaporanKeuangan extends Page
 
         return [
             'pendapatan' => [
-                'omzet_order'   => $kpi['totalNilaiOrder'],
-                'kas_diterima'  => $kpi['totalKasMasuk'],
-                'piutang'       => $kpi['piutangBerjalan'],
+                'omzet_order' => $kpi['totalNilaiOrder'],
+                'kas_diterima' => $kpi['totalKasMasuk'],
+                'piutang' => $kpi['piutangBerjalan'],
             ],
             'beban_operasional' => $expenseBreakdown,
             'beban_sdm' => [
@@ -302,9 +299,9 @@ class LaporanKeuangan extends Page
             ],
             'ringkasan' => [
                 'total_pendapatan' => $this->viewMode === 'kas' ? $kpi['totalKasMasuk'] : $kpi['totalNilaiOrder'],
-                'total_beban'      => $kpi['totalBeban'],
-                'laba_bersih'      => $kpi['labaBersih'],
-                'profit_margin'    => $kpi['profitMargin'],
+                'total_beban' => $kpi['totalBeban'],
+                'laba_bersih' => $kpi['labaBersih'],
+                'profit_margin' => $kpi['profitMargin'],
             ],
         ];
     }
@@ -320,6 +317,7 @@ class LaporanKeuangan extends Page
         if ($this->month !== 'all') {
             $query->whereMonth('tanggal', (int) $this->month);
         }
+
         return $query->orderBy('tanggal', 'asc')->get();
     }
 
@@ -333,6 +331,7 @@ class LaporanKeuangan extends Page
         if ($this->month !== 'all') {
             $query->whereMonth('tanggal', (int) $this->month);
         }
+
         return $query->orderBy('tanggal', 'asc')->get();
     }
 
@@ -344,31 +343,52 @@ class LaporanKeuangan extends Page
         $namaBulan = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
             5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
+
+        $paymentsByMonth = Payment::whereYear('payment_date', $this->year)
+            ->get(['payment_date', 'amount'])
+            ->groupBy(fn ($p) => (int) Carbon::parse($p->payment_date)->month)
+            ->map(fn ($g) => (float) $g->sum('amount'));
+
+        $ordersByMonth = Order::whereYear('tanggal', $this->year)
+            ->get(['tanggal', 'total'])
+            ->groupBy(fn ($o) => (int) Carbon::parse($o->tanggal)->month)
+            ->map(fn ($g) => (float) $g->sum('total'));
+
+        $expensesByMonth = Expense::whereYear('tanggal', $this->year)
+            ->get(['tanggal', 'nominal'])
+            ->groupBy(fn ($e) => (int) Carbon::parse($e->tanggal)->month)
+            ->map(fn ($g) => (float) $g->sum('nominal'));
+
+        $payrollsByMonth = PayrollItem::whereHas('payroll', fn ($q) => $q->whereYear('created_at', $this->year))
+            ->with('payroll:id,created_at')
+            ->get(['payroll_id', 'total_bersih'])
+            ->groupBy(fn ($p) => (int) Carbon::parse($p->payroll?->created_at)->month)
+            ->map(fn ($g) => (float) $g->sum('total_bersih'));
 
         $summary = [];
         for ($m = 1; $m <= 12; $m++) {
-            $inflow = (float) Payment::whereYear('payment_date', $this->year)->whereMonth('payment_date', $m)->sum('amount');
-            $orderVal = (float) Order::whereYear('tanggal', $this->year)->whereMonth('tanggal', $m)->sum('total');
-            $ops = (float) Expense::whereYear('tanggal', $this->year)->whereMonth('tanggal', $m)->sum('nominal');
-            $pay = (float) PayrollItem::whereHas('payroll', function ($q) use ($m) {
-                $q->whereYear('created_at', $this->year)->whereMonth('created_at', $m);
-            })->sum('total_bersih');
+            $inflow = (float) ($paymentsByMonth[$m] ?? 0);
+            $orderVal = (float) ($ordersByMonth[$m] ?? 0);
+            $ops = (float) ($expensesByMonth[$m] ?? 0);
+            $pay = (float) ($payrollsByMonth[$m] ?? 0);
             $totBeban = $ops + $pay;
             $acc = $this->viewMode === 'kas' ? $inflow : $orderVal;
             $net = $acc - $totBeban;
             $margin = $acc > 0 ? round(($net / $acc) * 100, 1) : 0;
 
             $summary[] = [
-                'bulan_num'   => $m,
-                'bulan'       => $namaBulan[$m],
-                'pendapatan'  => $acc,
-                'beban_ops'   => $ops,
-                'beban_gaji'  => $pay,
+                'bulan_num' => $m,
+                'bulan' => $namaBulan[$m],
+                'pendapatan' => $acc,
+                'kas_masuk' => $inflow,
+                'nilai_order' => $orderVal,
+                'beban_ops' => $ops,
+                'beban_gaji' => $pay,
                 'total_beban' => $totBeban,
                 'laba_bersih' => $net,
-                'margin'      => $margin,
+                'margin' => $margin,
             ];
         }
 

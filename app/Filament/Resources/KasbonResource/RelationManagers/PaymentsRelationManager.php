@@ -37,7 +37,7 @@ class PaymentsRelationManager extends RelationManager
                     ->currencyIdr()
                     ->required()
                     ->default(fn () => (int) round($loan->sisa_hutang))
-                    ->helperText('Maksimal: Rp ' . number_format($loan->sisa_hutang, 0, ',', '.')),
+                    ->helperText('Maksimal: Rp '.number_format($loan->sisa_hutang, 0, ',', '.')),
                 DatePicker::make('tanggal')
                     ->label('Tanggal Bayar')
                     ->default(now())
@@ -45,7 +45,7 @@ class PaymentsRelationManager extends RelationManager
                 Select::make('sumber')
                     ->label('Metode / Sumber')
                     ->options([
-                        'manual'      => 'Pembayaran Langsung (Tunai / Transfer)',
+                        'manual' => 'Pembayaran Langsung (Tunai / Transfer)',
                         'potong_gaji' => 'Potong Gaji (Payroll)',
                     ])
                     ->default('manual')

@@ -2,9 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\AbsensiSaya;
+use App\Filament\Resources\AbsensiResource\Pages\ListAbsensis;
+use App\Filament\Resources\PayrollResource\Pages\EditPayroll;
+use App\Filament\Resources\PayrollResource\RelationManagers\ItemsRelationManager;
 use App\Models\Attendance;
+use App\Models\Customer;
 use App\Models\EmployeeLoan;
-use App\Models\EmployeeLoanPayment;
 use App\Models\EmployeeProfile;
 use App\Models\Order;
 use App\Models\Payroll;
@@ -13,13 +17,14 @@ use App\Models\User;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderUser;
 use App\Services\PayrollService;
-use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class HrmPayrollWorkflowTest extends TestCase
 {
     use RefreshDatabase;
+
     public function test_payroll_service_generates_and_finalizes_accurately(): void
     {
         $admin = User::firstOrCreate(['email' => 'admin_test@bunardi.com'], ['name' => 'Admin Test', 'password' => bcrypt('password'), 'role' => 'admin']);
@@ -27,40 +32,40 @@ class HrmPayrollWorkflowTest extends TestCase
         // 1. Setup Karyawan Bulanan
         $monthlyUser = User::factory()->create(['name' => 'Karyawan Bulanan']);
         EmployeeProfile::create([
-            'user_id'             => $monthlyUser->id,
-            'nik'                 => 'TEST-001',
-            'jabatan'             => 'Staff Bulanan',
-            'tipe'                => 'bulanan',
-            'gaji_pokok'          => 3000000,
+            'user_id' => $monthlyUser->id,
+            'nik' => 'TEST-001',
+            'jabatan' => 'Staff Bulanan',
+            'tipe' => 'bulanan',
+            'gaji_pokok' => 3000000,
             'tunjangan_transport' => 200000,
-            'tunjangan_makan'     => 100000,
-            'status_aktif'        => true,
+            'tunjangan_makan' => 100000,
+            'status_aktif' => true,
         ]);
 
         // 2. Setup Karyawan Harian dengan Kasbon Auto-Potong
         $dailyUser = User::factory()->create(['name' => 'Karyawan Harian']);
         EmployeeProfile::create([
-            'user_id'             => $dailyUser->id,
-            'nik'                 => 'TEST-002',
-            'jabatan'             => 'Crew Harian',
-            'tipe'                => 'harian',
-            'gaji_pokok'          => 100000,
-            'upah_per_event'      => 150000,
+            'user_id' => $dailyUser->id,
+            'nik' => 'TEST-002',
+            'jabatan' => 'Crew Harian',
+            'tipe' => 'harian',
+            'gaji_pokok' => 100000,
+            'upah_per_event' => 150000,
             'tunjangan_transport' => 0,
-            'tunjangan_makan'     => 20000,
-            'status_aktif'        => true,
+            'tunjangan_makan' => 20000,
+            'status_aktif' => true,
         ]);
 
         $loan = EmployeeLoan::create([
-            'user_id'           => $dailyUser->id,
-            'jumlah'            => 400000,
-            'sisa_hutang'       => 400000,
+            'user_id' => $dailyUser->id,
+            'jumlah' => 400000,
+            'sisa_hutang' => 400000,
             'tanggal_pengajuan' => now()->toDateString(),
             'tanggal_disetujui' => now()->toDateString(),
-            'status'            => 'disetujui',
-            'metode_cicilan'    => 'auto_potong_gaji',
+            'status' => 'disetujui',
+            'metode_cicilan' => 'auto_potong_gaji',
             'cicilan_per_bulan' => 200000,
-            'disetujui_oleh'    => $admin->id,
+            'disetujui_oleh' => $admin->id,
         ]);
 
         $targetBulan = 10;
@@ -75,10 +80,10 @@ class HrmPayrollWorkflowTest extends TestCase
             );
             WorkOrderUser::create([
                 'work_order_id' => $wo->id,
-                'user_id'       => $dailyUser->id,
-                'peran'         => 'Crew Lapangan',
-                'hadir'         => true,
-                'upah_dibayar'  => 150000,
+                'user_id' => $dailyUser->id,
+                'peran' => 'Crew Lapangan',
+                'hadir' => true,
+                'upah_dibayar' => 150000,
             ]);
         }
 
@@ -110,15 +115,15 @@ class HrmPayrollWorkflowTest extends TestCase
         $this->assertEquals(200000, (float) $loan->sisa_hutang);
         $this->assertDatabaseHas('employee_loan_payments', [
             'employee_loan_id' => $loan->id,
-            'sumber'           => 'potong_gaji',
-            'jumlah_bayar'     => 200000,
+            'sumber' => 'potong_gaji',
+            'jumlah_bayar' => 200000,
         ]);
     }
 
     public function test_slip_gaji_pdf_stream_returns_ok(): void
     {
         $admin = User::first();
-        $item  = PayrollItem::first();
+        $item = PayrollItem::first();
 
         if ($item && $admin) {
             $response = $this->actingAs($admin)->get(route('payroll.slip', $item));
@@ -132,35 +137,35 @@ class HrmPayrollWorkflowTest extends TestCase
     public function test_self_attendance_for_event_and_daily(): void
     {
         $user = User::factory()->create();
-        $customer = \App\Models\Customer::create(['nama' => 'Cust Test', 'no_telepon' => '08123', 'alamat' => 'Alamat']);
+        $customer = Customer::create(['nama' => 'Cust Test', 'no_telepon' => '08123', 'alamat' => 'Alamat']);
         $order = Order::create([
             'customer_id' => $customer->id,
-            'no_order'    => 'ORD-SELF-01',
-            'nama_acara'  => 'Acara Self Test',
-            'tanggal'     => now()->toDateString(),
-            'total'       => 1000000,
+            'no_order' => 'ORD-SELF-01',
+            'nama_acara' => 'Acara Self Test',
+            'tanggal' => now()->toDateString(),
+            'total' => 1000000,
         ]);
 
         $wo = WorkOrder::create([
-            'order_id'           => $order->id,
-            'pic_id'             => $user->id,
-            'spk_number'         => 'SPK-SELF-01',
+            'order_id' => $order->id,
+            'pic_id' => $user->id,
+            'spk_number' => 'SPK-SELF-01',
             'surat_jalan_number' => 'SJ-SELF-01',
-            'tanggal_persiapan'  => now()->toDateString(),
-            'status'             => 'confirmed',
+            'tanggal_persiapan' => now()->toDateString(),
+            'status' => 'confirmed',
         ]);
 
         $assignment = WorkOrderUser::create([
             'work_order_id' => $wo->id,
-            'user_id'       => $user->id,
-            'peran'         => 'Crew Lapangan',
-            'hadir'         => false,
+            'user_id' => $user->id,
+            'peran' => 'Crew Lapangan',
+            'hadir' => false,
         ]);
 
         $this->actingAs($user);
 
         // Test Livewire AbsensiSaya page checkInEvent
-        \Livewire\Livewire::test(\App\Filament\Pages\AbsensiSaya::class)
+        Livewire::test(AbsensiSaya::class)
             ->call('checkInEvent', $assignment->id)
             ->assertHasNoErrors();
 
@@ -169,7 +174,7 @@ class HrmPayrollWorkflowTest extends TestCase
         $this->assertNotNull($assignment->waktu_absen);
 
         // Test checkInDaily
-        \Livewire\Livewire::test(\App\Filament\Pages\AbsensiSaya::class)
+        Livewire::test(AbsensiSaya::class)
             ->call('checkInDaily', 'hadir')
             ->assertHasNoErrors();
 
@@ -187,11 +192,11 @@ class HrmPayrollWorkflowTest extends TestCase
 
         $this->actingAs($admin);
 
-        \Livewire\Livewire::test(\App\Filament\Resources\AbsensiResource\Pages\ListAbsensis::class)
+        Livewire::test(ListAbsensis::class)
             ->callAction('bulk_attendance', [
-                'tanggal'    => '2026-10-15',
-                'status'     => 'hadir',
-                'user_ids'   => [$user1->id, $user2->id],
+                'tanggal' => '2026-10-15',
+                'status' => 'hadir',
+                'user_ids' => [$user1->id, $user2->id],
                 'keterangan' => 'Bulk attendance test',
             ])
             ->assertHasNoErrors();
@@ -205,41 +210,41 @@ class HrmPayrollWorkflowTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $crew = User::factory()->create(['name' => 'Crew Daily Test']);
         EmployeeProfile::create([
-            'user_id'             => $crew->id,
-            'nik'                 => 'DAILY-001',
-            'jabatan'             => 'Kru Dekorasi',
-            'tipe'                => 'harian',
-            'gaji_pokok'          => 100000,
-            'upah_per_event'      => 150000,
+            'user_id' => $crew->id,
+            'nik' => 'DAILY-001',
+            'jabatan' => 'Kru Dekorasi',
+            'tipe' => 'harian',
+            'gaji_pokok' => 100000,
+            'upah_per_event' => 150000,
             'tunjangan_transport' => 15000,
-            'tunjangan_makan'     => 25000,
-            'status_aktif'        => true,
+            'tunjangan_makan' => 25000,
+            'status_aktif' => true,
         ]);
 
-        $customer = \App\Models\Customer::create(['nama' => 'Cust Daily', 'no_telepon' => '08999', 'alamat' => 'Alamat']);
+        $customer = Customer::create(['nama' => 'Cust Daily', 'no_telepon' => '08999', 'alamat' => 'Alamat']);
         $order = Order::create([
             'customer_id' => $customer->id,
-            'no_order'    => 'ORD-DAILY-01',
-            'nama_acara'  => 'Acara Daily Test',
-            'tanggal'     => '2026-10-12',
-            'total'       => 2000000,
+            'no_order' => 'ORD-DAILY-01',
+            'nama_acara' => 'Acara Daily Test',
+            'tanggal' => '2026-10-12',
+            'total' => 2000000,
         ]);
 
         $wo = WorkOrder::create([
-            'order_id'           => $order->id,
-            'pic_id'             => $admin->id,
-            'spk_number'         => 'SPK-DAILY-01',
+            'order_id' => $order->id,
+            'pic_id' => $admin->id,
+            'spk_number' => 'SPK-DAILY-01',
             'surat_jalan_number' => 'SJ-DAILY-01',
-            'tanggal_persiapan'  => '2026-10-12',
-            'status'             => 'confirmed',
+            'tanggal_persiapan' => '2026-10-12',
+            'status' => 'confirmed',
         ]);
 
         WorkOrderUser::create([
             'work_order_id' => $wo->id,
-            'user_id'       => $crew->id,
-            'peran'         => 'Kru Lapangan',
-            'hadir'         => true,
-            'upah_dibayar'  => 150000,
+            'user_id' => $crew->id,
+            'peran' => 'Kru Lapangan',
+            'hadir' => true,
+            'upah_dibayar' => 150000,
         ]);
 
         $service = app(PayrollService::class);
@@ -265,46 +270,46 @@ class HrmPayrollWorkflowTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $payroll = Payroll::create([
             'tipe_periode' => 'harian',
-            'tanggal'      => '2026-10-12',
-            'status'       => 'draft',
-            'dibuat_oleh'  => $admin->id,
+            'tanggal' => '2026-10-12',
+            'status' => 'draft',
+            'dibuat_oleh' => $admin->id,
         ]);
 
         $user = User::factory()->create(['name' => 'Karyawan Bonus Test']);
         EmployeeProfile::create([
-            'user_id'      => $user->id,
-            'nik'          => 'BONUS-01',
-            'tipe'         => 'harian',
-            'gaji_pokok'   => 150000,
+            'user_id' => $user->id,
+            'nik' => 'BONUS-01',
+            'tipe' => 'harian',
+            'gaji_pokok' => 150000,
             'status_aktif' => true,
         ]);
 
         $item = PayrollItem::create([
-            'payroll_id'          => $payroll->id,
-            'user_id'             => $user->id,
-            'tipe_karyawan'       => 'harian',
-            'gaji_pokok'          => 150000,
-            'upah_event'          => 150000,
+            'payroll_id' => $payroll->id,
+            'user_id' => $user->id,
+            'tipe_karyawan' => 'harian',
+            'gaji_pokok' => 150000,
+            'upah_event' => 150000,
             'tunjangan_transport' => 20000,
-            'tunjangan_makan'     => 30000,
-            'bonus'               => 0,
-            'lembur'              => 0,
-            'potongan_kasbon'     => 0,
-            'potongan_lain'       => 0,
-            'total_bruto'         => 200000, // 150k + 20k + 30k
-            'total_bersih'        => 200000,
-            'status'              => 'draft',
+            'tunjangan_makan' => 30000,
+            'bonus' => 0,
+            'lembur' => 0,
+            'potongan_kasbon' => 0,
+            'potongan_lain' => 0,
+            'total_bruto' => 200000, // 150k + 20k + 30k
+            'total_bersih' => 200000,
+            'status' => 'draft',
         ]);
 
         $this->actingAs($admin);
 
-        \Livewire\Livewire::test(\App\Filament\Resources\PayrollResource\RelationManagers\ItemsRelationManager::class, [
+        Livewire::test(ItemsRelationManager::class, [
             'ownerRecord' => $payroll,
-            'pageClass'   => \App\Filament\Resources\PayrollResource\Pages\EditPayroll::class,
+            'pageClass' => EditPayroll::class,
         ])
             ->callTableAction('edit', $item, [
-                'bonus'         => 50000,
-                'lembur'        => 30000,
+                'bonus' => 50000,
+                'lembur' => 30000,
                 'potongan_lain' => 10000,
             ])
             ->assertHasNoErrors();

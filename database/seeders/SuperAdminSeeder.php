@@ -16,9 +16,9 @@ class SuperAdminSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'admin@bunardi.com'],
             [
-                'name'     => 'Super Admin',
+                'name' => 'Super Admin',
                 'password' => Hash::make('bunardi07'),
-                'role'     => 'admin',
+                'role' => 'admin',
             ]
         );
 

@@ -4,8 +4,8 @@ namespace App\Filament\Resources\WorkOrders\Schemas;
 
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
 class WorkOrderForm
@@ -44,7 +44,7 @@ class WorkOrderForm
                         'pending' => 'Pending',
                         'in_progress' => 'Sedang Dipersiapkan',
                         'ready' => 'Siap Dikirim',
-                        'completed' => 'Selesai'
+                        'completed' => 'Selesai',
                     ])
                     ->required()
                     ->default('pending'),

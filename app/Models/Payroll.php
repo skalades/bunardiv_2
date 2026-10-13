@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,10 +14,10 @@ class Payroll extends Model
     ];
 
     protected $casts = [
-        'tanggal'        => 'date',
+        'tanggal' => 'date',
         'tanggal_proses' => 'date',
-        'bulan'          => 'integer',
-        'tahun'          => 'integer',
+        'bulan' => 'integer',
+        'tahun' => 'integer',
     ];
 
     public function items(): HasMany
@@ -32,7 +33,7 @@ class Payroll extends Model
     public function getNamaBulanAttribute(): string
     {
         if ($this->tipe_periode === 'harian' && $this->tanggal) {
-            return 'Harian (' . \Carbon\Carbon::parse($this->tanggal)->translatedFormat('d M Y') . ')';
+            return 'Harian ('.Carbon::parse($this->tanggal)->translatedFormat('d M Y').')';
         }
 
         $bulanNama = [
@@ -42,6 +43,6 @@ class Payroll extends Model
             10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
 
-        return ($bulanNama[$this->bulan] ?? '?') . ' ' . $this->tahun;
+        return ($bulanNama[$this->bulan] ?? '?').' '.$this->tahun;
     }
 }

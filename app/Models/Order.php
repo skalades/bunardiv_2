@@ -8,7 +8,15 @@ class Order extends Model
 {
     protected $fillable = [
         'no_order', 'customer_id', 'nama_acara', 'jenis_acara', 'tanggal', 'jam',
-        'venue', 'catatan_khusus', 'subtotal', 'diskon', 'biaya_tambahan', 'total', 'status'
+        'venue', 'catatan_khusus', 'subtotal', 'diskon', 'biaya_tambahan', 'total', 'status',
+    ];
+
+    protected $casts = [
+        'tanggal' => 'date',
+        'subtotal' => 'decimal:2',
+        'diskon' => 'decimal:2',
+        'biaya_tambahan' => 'decimal:2',
+        'total' => 'decimal:2',
     ];
 
     protected static function booted(): void
@@ -33,11 +41,9 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    public function crews()
+    public function crewAssignments()
     {
-        return $this->belongsToMany(User::class, 'order_crew')
-                    ->withPivot('role')
-                    ->withTimestamps();
+        return $this->hasManyThrough(WorkOrderUser::class, WorkOrder::class);
     }
 
     public function inventoryTransactions()

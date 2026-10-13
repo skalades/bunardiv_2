@@ -3,26 +3,33 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\OrderResource\Pages;
+use App\Filament\Resources\OrderResource\RelationManagers\PaymentsRelationManager;
+use App\Models\Customer;
 use App\Models\Order;
-use App\Models\Product;
-use Filament\Forms;
-use Filament\Schemas\Schema;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
+use Filament\Forms\Components\ViewField;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
-use Filament\Forms\Components\ViewField;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TimePicker;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Repeater;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class OrderResource extends Resource
 {
@@ -31,6 +38,11 @@ class OrderResource extends Resource
     public static function canViewAny(): bool
     {
         return auth()->user()?->role === 'admin';
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['customer']);
     }
 
     public static function getNavigationIcon(): string
@@ -71,19 +83,20 @@ class OrderResource extends Resource
                     ->schema([
                         ViewField::make('pos_menu')
                             ->view('filament.forms.components.pos-menu')
-                            ->columnSpanFull()
+                            ->columnSpanFull(),
                     ])
                     ->columnSpan([
                         'default' => 1,
                         'lg' => 2,
                     ]),
-                
+
                 // POS Form (Right Side)
                 Section::make('Detail Pesanan')
                     ->schema([
                         Select::make('customer_id')
                             ->options(function () {
-                                $customers = \App\Models\Customer::pluck('nama', 'id')->toArray();
+                                $customers = Customer::pluck('nama', 'id')->toArray();
+
                                 return ['new' => '+ Tambah pelanggan baru'] + $customers;
                             })
                             ->searchable()
@@ -133,10 +146,10 @@ class OrderResource extends Resource
                             ->label('Status Pesanan')
                             ->options([
                                 'pesanan masuk' => 'Pesanan Masuk',
-                                'dp dibayar'    => 'DP Dibayar',
-                                'proses'        => 'Dalam Proses',
-                                'selesai'       => 'Selesai',
-                                'dibatalkan'    => 'Dibatalkan',
+                                'dp dibayar' => 'DP Dibayar',
+                                'proses' => 'Dalam Proses',
+                                'selesai' => 'Selesai',
+                                'dibatalkan' => 'Dibatalkan',
                             ])
                             ->default('pesanan masuk')
                             ->required(),
@@ -152,7 +165,7 @@ class OrderResource extends Resource
                         Hidden::make('cart_data')->default('[]')->extraAttributes(['class' => 'cart-data-input']),
                         Hidden::make('subtotal')->default(0)->extraAttributes(['class' => 'subtotal-input']),
                         Hidden::make('total')->default(0)->extraAttributes(['class' => 'total-input']),
-                        
+
                         TextInput::make('diskon')
                             ->label('Diskon')
                             ->currencyIdr()
@@ -178,14 +191,14 @@ class OrderResource extends Resource
             ->schema([
                 Section::make('Informasi Utama')
                     ->schema([
-                        \Filament\Infolists\Components\TextEntry::make('no_order')->label('No. Order'),
-                        \Filament\Infolists\Components\TextEntry::make('customer.nama')->label('Pelanggan'),
-                        \Filament\Infolists\Components\TextEntry::make('nama_acara')->label('Acara'),
-                        \Filament\Infolists\Components\TextEntry::make('jenis_acara')->label('Jenis Acara'),
-                        \Filament\Infolists\Components\TextEntry::make('tanggal')->label('Tanggal')->date('d M Y'),
-                        \Filament\Infolists\Components\TextEntry::make('jam')->label('Jam'),
-                        \Filament\Infolists\Components\TextEntry::make('venue')->label('Venue'),
-                        \Filament\Infolists\Components\TextEntry::make('status')->label('Status')->badge()
+                        TextEntry::make('no_order')->label('No. Order'),
+                        TextEntry::make('customer.nama')->label('Pelanggan'),
+                        TextEntry::make('nama_acara')->label('Acara'),
+                        TextEntry::make('jenis_acara')->label('Jenis Acara'),
+                        TextEntry::make('tanggal')->label('Tanggal')->date('d M Y'),
+                        TextEntry::make('jam')->label('Jam'),
+                        TextEntry::make('venue')->label('Venue'),
+                        TextEntry::make('status')->label('Status')->badge()
                             ->color(fn (string $state): string => match ($state) {
                                 'pesanan masuk' => 'gray',
                                 'dp dibayar' => 'warning',
@@ -195,27 +208,27 @@ class OrderResource extends Resource
                                 default => 'primary',
                             }),
                     ])->columns(2),
-                
+
                 Section::make('Detail Keuangan')
                     ->schema([
-                        \Filament\Infolists\Components\TextEntry::make('subtotal')->label('Subtotal')->money('idr', decimalPlaces: 0),
-                        \Filament\Infolists\Components\TextEntry::make('diskon')->label('Diskon')->money('idr', decimalPlaces: 0),
-                        \Filament\Infolists\Components\TextEntry::make('biaya_tambahan')->label('Biaya Tambahan')->money('idr', decimalPlaces: 0),
-                        \Filament\Infolists\Components\TextEntry::make('total')->label('Total')->money('idr', decimalPlaces: 0)->weight('bold'),
+                        TextEntry::make('subtotal')->label('Subtotal')->money('idr', decimalPlaces: 0),
+                        TextEntry::make('diskon')->label('Diskon')->money('idr', decimalPlaces: 0),
+                        TextEntry::make('biaya_tambahan')->label('Biaya Tambahan')->money('idr', decimalPlaces: 0),
+                        TextEntry::make('total')->label('Total')->money('idr', decimalPlaces: 0)->weight('bold'),
                     ])->columns(2),
 
                 Section::make('Item Pesanan')
                     ->schema([
-                        \Filament\Infolists\Components\RepeatableEntry::make('items')
+                        RepeatableEntry::make('items')
                             ->label('')
                             ->schema([
-                                \Filament\Infolists\Components\TextEntry::make('product.nama')->label('Produk'),
-                                \Filament\Infolists\Components\TextEntry::make('qty')->label('Qty'),
-                                \Filament\Infolists\Components\TextEntry::make('harga')->label('Harga')->money('idr', decimalPlaces: 0),
-                                \Filament\Infolists\Components\TextEntry::make('subtotal')->label('Subtotal')->money('idr', decimalPlaces: 0),
+                                TextEntry::make('product.nama')->label('Produk'),
+                                TextEntry::make('qty')->label('Qty'),
+                                TextEntry::make('harga')->label('Harga')->money('idr', decimalPlaces: 0),
+                                TextEntry::make('subtotal')->label('Subtotal')->money('idr', decimalPlaces: 0),
                             ])
-                            ->columns(4)
-                    ])
+                            ->columns(4),
+                    ]),
             ]);
     }
 
@@ -257,61 +270,61 @@ class OrderResource extends Resource
                     }),
             ])
             ->filters([
-                \Filament\Tables\Filters\SelectFilter::make('status')
+                SelectFilter::make('status')
                     ->label('Filter Status')
                     ->options([
                         'pesanan masuk' => 'Pesanan Masuk',
-                        'dp dibayar'    => 'DP Dibayar',
-                        'proses'        => 'Dalam Proses',
-                        'selesai'       => 'Selesai',
-                        'dibatalkan'    => 'Dibatalkan',
+                        'dp dibayar' => 'DP Dibayar',
+                        'proses' => 'Dalam Proses',
+                        'selesai' => 'Selesai',
+                        'dibatalkan' => 'Dibatalkan',
                     ]),
             ])
             ->actions([
-                \Filament\Actions\Action::make('ubah_status')
+                Action::make('ubah_status')
                     ->label('Ubah Status')
                     ->icon('heroicon-o-arrow-path')
                     ->color('info')
-                    ->modalHeading(fn (\App\Models\Order $record) => "Ubah Status: {$record->no_order}")
+                    ->modalHeading(fn (Order $record) => "Ubah Status: {$record->no_order}")
                     ->modalWidth('md')
                     ->form([
                         Select::make('status')
                             ->label('Status Pesanan')
                             ->options([
                                 'pesanan masuk' => 'Pesanan Masuk',
-                                'dp dibayar'    => 'DP Dibayar',
-                                'proses'        => 'Dalam Proses',
-                                'selesai'       => 'Selesai',
-                                'dibatalkan'    => 'Dibatalkan',
+                                'dp dibayar' => 'DP Dibayar',
+                                'proses' => 'Dalam Proses',
+                                'selesai' => 'Selesai',
+                                'dibatalkan' => 'Dibatalkan',
                             ])
                             ->required(),
                     ])
-                    ->fillForm(fn (\App\Models\Order $record): array => [
+                    ->fillForm(fn (Order $record): array => [
                         'status' => $record->status,
                     ])
-                    ->action(function (\App\Models\Order $record, array $data): void {
+                    ->action(function (Order $record, array $data): void {
                         $record->update(['status' => $data['status']]);
-                        \Filament\Notifications\Notification::make()
+                        Notification::make()
                             ->title('Status pesanan berhasil diperbarui')
-                            ->body("Status pesanan {$record->no_order} diubah menjadi: " . ucfirst($data['status']))
+                            ->body("Status pesanan {$record->no_order} diubah menjadi: ".ucfirst($data['status']))
                             ->success()
                             ->send();
                     }),
-                \Filament\Actions\Action::make('print_invoice')
+                Action::make('print_invoice')
                     ->label('Cetak Invoice')
                     ->icon('heroicon-o-document-arrow-down')
-                    ->url(fn (\App\Models\Order $record) => route('invoice.download', $record))
+                    ->url(fn (Order $record) => route('invoice.download', $record))
                     ->openUrlInNewTab(),
-                \Filament\Actions\ViewAction::make()->label('Detail'),
-                \Filament\Actions\EditAction::make(),
-                \Filament\Actions\DeleteAction::make()
+                ViewAction::make()->label('Detail'),
+                EditAction::make(),
+                DeleteAction::make()
                     ->label('Hapus')
-                    ->modalHeading(fn (\App\Models\Order $record) => "Hapus Pesanan {$record->no_order}")
+                    ->modalHeading(fn (Order $record) => "Hapus Pesanan {$record->no_order}")
                     ->modalDescription('Apakah Anda yakin ingin menghapus pesanan ini? Semua rincian item, invoice, dan riwayat pembayaran terkait akan dihapus secara permanen.'),
             ])
             ->bulkActions([
-                \Filament\Actions\BulkActionGroup::make([
-                    \Filament\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -319,7 +332,7 @@ class OrderResource extends Resource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Resources\OrderResource\RelationManagers\PaymentsRelationManager::class,
+            PaymentsRelationManager::class,
         ];
     }
 

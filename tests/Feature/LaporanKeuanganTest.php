@@ -50,28 +50,28 @@ class LaporanKeuanganTest extends TestCase
         ]);
 
         $order = Order::create([
-            'no_order'   => 'ORD-TEST-001',
+            'no_order' => 'ORD-TEST-001',
             'nama_acara' => 'Test Wedding Event',
-            'tanggal'    => '2026-10-15',
-            'status'     => 'proses',
-            'total'      => 50000000,
+            'tanggal' => '2026-10-15',
+            'status' => 'proses',
+            'total' => 50000000,
         ]);
 
         Payment::create([
-            'order_id'         => $order->id,
-            'amount'           => 20000000,
-            'payment_date'     => '2026-10-15',
-            'payment_method'   => 'Transfer BCA',
+            'order_id' => $order->id,
+            'amount' => 20000000,
+            'payment_date' => '2026-10-15',
+            'payment_method' => 'Transfer BCA',
             'reference_number' => 'REF-001',
         ]);
 
         Expense::create([
-            'tanggal'           => '2026-10-15',
-            'kategori'          => 'Bahan Baku & Catering',
-            'judul'             => 'Belanja Daging',
-            'nominal'           => 5000000,
+            'tanggal' => '2026-10-15',
+            'kategori' => 'Bahan Baku & Catering',
+            'judul' => 'Belanja Daging',
+            'nominal' => 5000000,
             'metode_pembayaran' => 'Tunai / Cash',
-            'pic_id'            => $admin->id,
+            'pic_id' => $admin->id,
         ]);
 
         $component = Livewire::actingAs($admin)
@@ -105,17 +105,17 @@ class LaporanKeuanganTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         Order::create([
-            'no_order'   => 'ORD-OCT',
+            'no_order' => 'ORD-OCT',
             'nama_acara' => 'Event Oktober',
-            'tanggal'    => '2026-10-01',
-            'total'      => 10000000,
+            'tanggal' => '2026-10-01',
+            'total' => 10000000,
         ]);
 
         Order::create([
-            'no_order'   => 'ORD-NOV',
+            'no_order' => 'ORD-NOV',
             'nama_acara' => 'Event November',
-            'tanggal'    => '2026-11-01',
-            'total'      => 20000000,
+            'tanggal' => '2026-11-01',
+            'total' => 20000000,
         ]);
 
         $component = Livewire::actingAs($admin)
@@ -134,30 +134,30 @@ class LaporanKeuanganTest extends TestCase
 
         // Create an order and expense so tables have records
         $order = Order::create([
-            'no_order'   => 'ORD-2026-Y01',
+            'no_order' => 'ORD-2026-Y01',
             'nama_acara' => 'Pernikahan Annual Test',
-            'tanggal'    => '2026-05-20',
-            'total'      => 45000000,
+            'tanggal' => '2026-05-20',
+            'total' => 45000000,
         ]);
         Payment::create([
-            'order_id'       => $order->id,
-            'amount'         => 30000000,
-            'payment_date'   => '2026-05-20',
+            'order_id' => $order->id,
+            'amount' => 30000000,
+            'payment_date' => '2026-05-20',
             'payment_method' => 'Transfer BCA',
         ]);
         Expense::create([
-            'tanggal'           => '2026-05-21',
-            'kategori'          => 'Bahan Baku & Catering',
-            'judul'             => 'Belanja Beras & Daging',
-            'nominal'           => 12000000,
+            'tanggal' => '2026-05-21',
+            'kategori' => 'Bahan Baku & Catering',
+            'judul' => 'Belanja Beras & Daging',
+            'nominal' => 12000000,
             'metode_pembayaran' => 'Transfer',
-            'pic_id'            => $admin->id,
+            'pic_id' => $admin->id,
         ]);
 
         $response = $this->actingAs($admin)
             ->get(route('laporan_keuangan.pdf', [
-                'year'     => 2026,
-                'month'    => 'all',
+                'year' => 2026,
+                'month' => 'all',
                 'viewMode' => 'kas',
             ]));
 
@@ -167,7 +167,7 @@ class LaporanKeuanganTest extends TestCase
         $pdfContent = $response->getContent();
         // Memastikan dokumen PDF berhasil terkompilasi dan memuat minimal 3 halaman
         $pageCount = preg_match_all('/\/Type\s*\/Page\b/', $pdfContent);
-        $this->assertGreaterThanOrEqual(3, $pageCount, "Laporan tahunan harus terbagi dalam beberapa halaman (minimal 3 halaman)");
+        $this->assertGreaterThanOrEqual(3, $pageCount, 'Laporan tahunan harus terbagi dalam beberapa halaman (minimal 3 halaman)');
     }
 
     public function test_admin_can_download_laporan_keuangan_pdf_monthly(): void
@@ -175,30 +175,30 @@ class LaporanKeuanganTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $order = Order::create([
-            'no_order'   => 'ORD-2026-M10',
+            'no_order' => 'ORD-2026-M10',
             'nama_acara' => 'Pernikahan Bulan Oktober',
-            'tanggal'    => '2026-10-18',
-            'total'      => 60000000,
+            'tanggal' => '2026-10-18',
+            'total' => 60000000,
         ]);
         Payment::create([
-            'order_id'       => $order->id,
-            'amount'         => 40000000,
-            'payment_date'   => '2026-10-18',
+            'order_id' => $order->id,
+            'amount' => 40000000,
+            'payment_date' => '2026-10-18',
             'payment_method' => 'Transfer Mandiri',
         ]);
         Expense::create([
-            'tanggal'           => '2026-10-19',
-            'kategori'          => 'Dekorasi & Pelaminan',
-            'judul'             => 'Bunga Segar & Properti Pelaminan',
-            'nominal'           => 15000000,
+            'tanggal' => '2026-10-19',
+            'kategori' => 'Dekorasi & Pelaminan',
+            'judul' => 'Bunga Segar & Properti Pelaminan',
+            'nominal' => 15000000,
             'metode_pembayaran' => 'Cash',
-            'pic_id'            => $admin->id,
+            'pic_id' => $admin->id,
         ]);
 
         $response = $this->actingAs($admin)
             ->get(route('laporan_keuangan.pdf', [
-                'year'     => 2026,
-                'month'    => '10',
+                'year' => 2026,
+                'month' => '10',
                 'viewMode' => 'akrual',
             ]));
 
@@ -208,7 +208,6 @@ class LaporanKeuanganTest extends TestCase
         $pdfContent = $response->getContent();
         // Memastikan dokumen PDF bulanan juga terbagi dalam beberapa halaman (minimal 3 halaman)
         $pageCount = preg_match_all('/\/Type\s*\/Page\b/', $pdfContent);
-        $this->assertGreaterThanOrEqual(3, $pageCount, "Laporan bulanan harus terbagi dalam beberapa halaman (minimal 3 halaman)");
+        $this->assertGreaterThanOrEqual(3, $pageCount, 'Laporan bulanan harus terbagi dalam beberapa halaman (minimal 3 halaman)');
     }
 }
-

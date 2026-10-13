@@ -16,11 +16,11 @@ class EmployeeLoan extends Model
     ];
 
     protected $casts = [
-        'tanggal_pengajuan'  => 'date',
-        'tanggal_disetujui'  => 'date',
-        'jumlah'             => 'decimal:2',
-        'sisa_hutang'        => 'decimal:2',
-        'cicilan_per_bulan'  => 'decimal:2',
+        'tanggal_pengajuan' => 'date',
+        'tanggal_disetujui' => 'date',
+        'jumlah' => 'decimal:2',
+        'sisa_hutang' => 'decimal:2',
+        'cicilan_per_bulan' => 'decimal:2',
     ];
 
     public function user(): BelongsTo

@@ -32,6 +32,10 @@ class User extends Authenticatable implements FilamentUser
         'role',
     ];
 
+    protected $attributes = [
+        'role' => 'crew',
+    ];
+
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -55,11 +59,11 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
-    public function assignedOrders()
+    public function workOrders()
     {
-        return $this->belongsToMany(Order::class, 'order_crew')
-                    ->withPivot('role')
-                    ->withTimestamps();
+        return $this->belongsToMany(WorkOrder::class, 'work_order_users')
+            ->withPivot(['peran', 'hadir', 'waktu_absen', 'upah_dibayar', 'catatan_kehadiran'])
+            ->withTimestamps();
     }
 
     // ── HRM Relations ──────────────────────────────────────────

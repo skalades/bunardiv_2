@@ -14,7 +14,8 @@ use Filament\Widgets\Widget;
 class MainDashboardWidget extends Widget
 {
     protected string $view = 'filament.widgets.main-dashboard-widget';
-    protected int | string | array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = 'full';
 
     public string $scheduleFilter = '7_days'; // '7_days' or 'today'
 
@@ -49,22 +50,13 @@ class MainDashboardWidget extends Widget
         $bebanGaji = (float) PayrollItem::sum('total_bersih');
         $totalPengeluaran = $bebanOps + $bebanGaji;
 
-        // 4. Piutang Pelanggan & Tagihan Belum Lunas
-        $orders = Order::with('payments')->where('status', '!=', 'dibatalkan')->get();
-        $totalKontrak = 0;
-        $totalTerbayar = 0;
-        $unpaidInvoicesCount = 0;
-
-        foreach ($orders as $order) {
-            $orderTotal = (float) $order->total;
-            $orderPaid = (float) $order->payments->sum('amount');
-            $totalKontrak += $orderTotal;
-            $totalTerbayar += $orderPaid;
-            if ($orderTotal > $orderPaid) {
-                $unpaidInvoicesCount++;
-            }
-        }
+        // 4. Piutang Pelanggan & Tagihan Belum Lunas (Dioptimalkan via SQL Aggregate)
+        $totalKontrak = (float) Order::where('status', '!=', 'dibatalkan')->sum('total');
+        $totalTerbayar = (float) Payment::whereHas('order', fn ($q) => $q->where('status', '!=', 'dibatalkan'))->sum('amount');
         $piutangPelanggan = max(0, $totalKontrak - $totalTerbayar);
+        $unpaidInvoicesCount = Order::where('status', '!=', 'dibatalkan')
+            ->whereRaw('total > (select coalesce(sum(amount), 0) from payments where payments.order_id = orders.id)')
+            ->count();
 
         // 5. Estimasi Profit Bulan Ini
         $pemasukanBulanIni = (float) Payment::whereYear('payment_date', $thisYear)
@@ -98,23 +90,23 @@ class MainDashboardWidget extends Widget
         $crewBelum = max(0, $totalCrew - $crewHadir);
 
         return [
-            'todayOrdersCount'       => $todayOrdersCount,
-            'pendingOrdersCount'     => $pendingOrdersCount,
-            'totalPemasukan'         => $totalPemasukan,
-            'totalPembayaranCount'   => $totalPembayaranCount,
-            'totalPengeluaran'       => $totalPengeluaran,
-            'bebanOps'               => $bebanOps,
-            'bebanGaji'              => $bebanGaji,
-            'piutangPelanggan'       => $piutangPelanggan,
-            'unpaidInvoicesCount'    => $unpaidInvoicesCount,
-            'profitBulanIni'         => $profitBulanIni,
-            'pemasukanBulanIni'      => $pemasukanBulanIni,
-            'pengeluaranBulanIni'    => $pengeluaranBulanIni,
+            'todayOrdersCount' => $todayOrdersCount,
+            'pendingOrdersCount' => $pendingOrdersCount,
+            'totalPemasukan' => $totalPemasukan,
+            'totalPembayaranCount' => $totalPembayaranCount,
+            'totalPengeluaran' => $totalPengeluaran,
+            'bebanOps' => $bebanOps,
+            'bebanGaji' => $bebanGaji,
+            'piutangPelanggan' => $piutangPelanggan,
+            'unpaidInvoicesCount' => $unpaidInvoicesCount,
+            'profitBulanIni' => $profitBulanIni,
+            'pemasukanBulanIni' => $pemasukanBulanIni,
+            'pengeluaranBulanIni' => $pengeluaranBulanIni,
             'pesananSelesaiBulanIni' => $pesananSelesaiBulanIni,
-            'totalCrew'              => $totalCrew,
-            'crewHadir'              => $crewHadir,
-            'crewBelum'              => $crewBelum,
-            'upcomingOrdersCount'    => Order::whereBetween('tanggal', [Carbon::today()->toDateString(), Carbon::today()->addDays(7)->toDateString()])
+            'totalCrew' => $totalCrew,
+            'crewHadir' => $crewHadir,
+            'crewBelum' => $crewBelum,
+            'upcomingOrdersCount' => Order::whereBetween('tanggal', [Carbon::today()->toDateString(), Carbon::today()->addDays(7)->toDateString()])
                 ->where('status', '!=', 'dibatalkan')
                 ->count(),
         ];

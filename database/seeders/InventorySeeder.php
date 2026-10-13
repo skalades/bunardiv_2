@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Inventory;
+use Illuminate\Database\Seeder;
 
 class InventorySeeder extends Seeder
 {
@@ -61,7 +61,7 @@ class InventorySeeder extends Seeder
 
         foreach ($peralatan as $item) {
             Inventory::firstOrCreate(
-                ['nama' => $item['nama']], 
+                ['nama' => $item['nama']],
                 $item
             );
         }

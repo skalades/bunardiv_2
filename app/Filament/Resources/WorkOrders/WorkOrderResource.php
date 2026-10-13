@@ -8,11 +8,10 @@ use App\Filament\Resources\WorkOrders\Pages\ListWorkOrders;
 use App\Filament\Resources\WorkOrders\Schemas\WorkOrderForm;
 use App\Filament\Resources\WorkOrders\Tables\WorkOrdersTable;
 use App\Models\WorkOrder;
-use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class WorkOrderResource extends Resource
 {
@@ -21,6 +20,11 @@ class WorkOrderResource extends Resource
     public static function canViewAny(): bool
     {
         return auth()->user()?->role === 'admin';
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['order', 'pic']);
     }
 
     public static function getNavigationGroup(): ?string

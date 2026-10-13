@@ -33,30 +33,30 @@ class UpcomingScheduleDashboardTest extends TestCase
 
         // 1. Order in 3 days (within 7 days)
         $order3Days = Order::create([
-            'no_order'    => 'ORD-NEXT-3DAYS',
+            'no_order' => 'ORD-NEXT-3DAYS',
             'customer_id' => $customer->id,
-            'nama_acara'  => 'Pernikahan Budi & Ani',
+            'nama_acara' => 'Pernikahan Budi & Ani',
             'jenis_acara' => 'Pernikahan',
-            'tanggal'     => Carbon::today()->addDays(3)->toDateString(),
-            'jam'         => '10:00:00',
-            'venue'       => 'Gedung Pertemuan Graha',
-            'subtotal'    => 15000000,
-            'total'       => 15000000,
-            'status'      => 'proses',
+            'tanggal' => Carbon::today()->addDays(3)->toDateString(),
+            'jam' => '10:00:00',
+            'venue' => 'Gedung Pertemuan Graha',
+            'subtotal' => 15000000,
+            'total' => 15000000,
+            'status' => 'proses',
         ]);
 
         // 2. Order in 10 days (beyond 7 days)
         $order10Days = Order::create([
-            'no_order'    => 'ORD-NEXT-10DAYS',
+            'no_order' => 'ORD-NEXT-10DAYS',
             'customer_id' => $customer->id,
-            'nama_acara'  => 'Konser Musik Akbar',
+            'nama_acara' => 'Konser Musik Akbar',
             'jenis_acara' => 'Konser',
-            'tanggal'     => Carbon::today()->addDays(10)->toDateString(),
-            'jam'         => '19:00:00',
-            'venue'       => 'Stadion',
-            'subtotal'    => 25000000,
-            'total'       => 25000000,
-            'status'      => 'pesanan masuk',
+            'tanggal' => Carbon::today()->addDays(10)->toDateString(),
+            'jam' => '19:00:00',
+            'venue' => 'Stadion',
+            'subtotal' => 25000000,
+            'total' => 25000000,
+            'status' => 'pesanan masuk',
         ]);
 
         $test = Livewire::actingAs($this->admin)
@@ -89,29 +89,29 @@ class UpcomingScheduleDashboardTest extends TestCase
         $customer = Customer::create(['nama' => 'Siti Rahma', 'no_telp' => '081234568']);
 
         $orderToday = Order::create([
-            'no_order'    => 'ORD-TODAY-01',
+            'no_order' => 'ORD-TODAY-01',
             'customer_id' => $customer->id,
-            'nama_acara'  => 'Syukuran Hari Ini',
+            'nama_acara' => 'Syukuran Hari Ini',
             'jenis_acara' => 'Syukuran',
-            'tanggal'     => Carbon::today()->toDateString(),
-            'jam'         => '12:00:00',
-            'venue'       => 'Rumah Makan Padang',
-            'subtotal'    => 5000000,
-            'total'       => 5000000,
-            'status'      => 'dp dibayar',
+            'tanggal' => Carbon::today()->toDateString(),
+            'jam' => '12:00:00',
+            'venue' => 'Rumah Makan Padang',
+            'subtotal' => 5000000,
+            'total' => 5000000,
+            'status' => 'dp dibayar',
         ]);
 
         $orderTomorrow = Order::create([
-            'no_order'    => 'ORD-TOMORROW-01',
+            'no_order' => 'ORD-TOMORROW-01',
             'customer_id' => $customer->id,
-            'nama_acara'  => 'Seminar Bisnis Besok',
+            'nama_acara' => 'Seminar Bisnis Besok',
             'jenis_acara' => 'Corporate',
-            'tanggal'     => Carbon::today()->addDay()->toDateString(),
-            'jam'         => '08:00:00',
-            'venue'       => 'Hotel Ballroom',
-            'subtotal'    => 8000000,
-            'total'       => 8000000,
-            'status'      => 'pesanan masuk',
+            'tanggal' => Carbon::today()->addDay()->toDateString(),
+            'jam' => '08:00:00',
+            'venue' => 'Hotel Ballroom',
+            'subtotal' => 8000000,
+            'total' => 8000000,
+            'status' => 'pesanan masuk',
         ]);
 
         Livewire::actingAs($this->admin)

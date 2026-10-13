@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Customer;
 use App\Models\Product;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 class OrderSeeder extends Seeder
@@ -21,6 +21,7 @@ class OrderSeeder extends Seeder
 
         if ($customers->isEmpty() || $products->isEmpty()) {
             $this->command->warn('Seeder tidak bisa dijalankan karena tabel Customer atau Product kosong.');
+
             return;
         }
 
@@ -58,9 +59,9 @@ class OrderSeeder extends Seeder
             $total = $subtotal - $diskon + $biaya_tambahan;
 
             $order = Order::create([
-                'no_order' => 'ORD-' . date('Ym') . '-' . str_pad($i, 4, '0', STR_PAD_LEFT) . strtoupper(Str::random(3)),
+                'no_order' => 'ORD-'.date('Ym').'-'.str_pad($i, 4, '0', STR_PAD_LEFT).strtoupper(Str::random(3)),
                 'customer_id' => $customer->id,
-                'nama_acara' => 'Acara ' . $acara . ' ' . $customer->nama,
+                'nama_acara' => 'Acara '.$acara.' '.$customer->nama,
                 'jenis_acara' => $acara,
                 'tanggal' => now()->addDays(rand(1, 60))->toDateString(),
                 'jam' => sprintf('%02d:00:00', rand(8, 19)),

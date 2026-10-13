@@ -35,7 +35,7 @@ class EditPayroll extends EditRecord
                         $this->refreshFormData(['status', 'tanggal_proses']);
                     } catch (\Throwable $e) {
                         Notification::make()
-                            ->title('Gagal: ' . $e->getMessage())
+                            ->title('Gagal: '.$e->getMessage())
                             ->danger()
                             ->send();
                     }

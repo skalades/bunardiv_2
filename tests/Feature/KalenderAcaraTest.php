@@ -3,10 +3,11 @@
 namespace Tests\Feature;
 
 use App\Filament\Pages\KalenderAcara;
+use App\Filament\Resources\OrderResource\Pages\CreateOrder;
 use App\Models\Customer;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\User;
-use App\Models\WorkOrder;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -133,7 +134,7 @@ class KalenderAcaraTest extends TestCase
     public function test_admin_can_create_order_via_pos_cepat_page(): void
     {
         $customer = Customer::create(['nama' => 'Pak Budi', 'no_telp' => '081234567']);
-        $product = \App\Models\Product::create([
+        $product = Product::create([
             'nama' => 'Paket Prasmanan Test',
             'kategori' => 'CATERING',
             'harga' => 50000,
@@ -145,29 +146,29 @@ class KalenderAcaraTest extends TestCase
                 'name' => $product->nama,
                 'price' => 50000,
                 'qty' => 10,
-            ]
+            ],
         ]);
 
         Livewire::actingAs($this->admin)
-            ->test(\App\Filament\Resources\OrderResource\Pages\CreateOrder::class)
+            ->test(CreateOrder::class)
             ->fillForm([
-                'customer_id'    => $customer->id,
-                'nama_acara'     => 'Syukuran Kantor',
-                'jenis_acara'    => 'Corporate',
-                'tanggal'        => '2026-10-28',
-                'jam'            => '12:00:00',
-                'venue'          => 'Gedung Menara',
-                'cart_data'      => $cartData,
-                'subtotal'       => 500000,
-                'total'          => 500000,
+                'customer_id' => $customer->id,
+                'nama_acara' => 'Syukuran Kantor',
+                'jenis_acara' => 'Corporate',
+                'tanggal' => '2026-10-28',
+                'jam' => '12:00:00',
+                'venue' => 'Gedung Menara',
+                'cart_data' => $cartData,
+                'subtotal' => 500000,
+                'total' => 500000,
             ])
             ->call('create')
             ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('orders', [
             'customer_id' => $customer->id,
-            'nama_acara'  => 'Syukuran Kantor',
-            'total'       => 500000,
+            'nama_acara' => 'Syukuran Kantor',
+            'total' => 500000,
         ]);
 
         $order = Order::where('nama_acara', 'Syukuran Kantor')->first();

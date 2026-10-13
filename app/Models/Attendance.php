@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -17,7 +18,7 @@ class Attendance extends Model
 
     public function setTanggalAttribute($value): void
     {
-        $this->attributes['tanggal'] = $value ? \Carbon\Carbon::parse($value)->toDateString() : null;
+        $this->attributes['tanggal'] = $value ? Carbon::parse($value)->toDateString() : null;
     }
 
     public function user(): BelongsTo

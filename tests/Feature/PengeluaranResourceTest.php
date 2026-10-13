@@ -23,32 +23,32 @@ class PengeluaranResourceTest extends TestCase
         $customer = Customer::create(['nama' => 'Budi Santoso', 'no_telepon' => '08123', 'alamat' => 'Yogyakarta']);
         $order = Order::create([
             'customer_id' => $customer->id,
-            'no_order'    => 'ORD-202610-001',
-            'nama_acara'  => 'Pernikahan Budi & Ani',
-            'tanggal'     => '2026-10-15',
-            'total'       => 5000000,
+            'no_order' => 'ORD-202610-001',
+            'nama_acara' => 'Pernikahan Budi & Ani',
+            'tanggal' => '2026-10-15',
+            'total' => 5000000,
         ]);
 
         // Test create page Livewire
         Livewire::test(PengeluaranResource\Pages\CreatePengeluaran::class)
             ->fillForm([
-                'tanggal'           => '2026-10-12',
-                'kategori'          => 'Properti & Dekorasi',
-                'judul'             => 'Beli Bunga Mawar & Melati Segar',
-                'nominal'           => 750000,
+                'tanggal' => '2026-10-12',
+                'kategori' => 'Properti & Dekorasi',
+                'judul' => 'Beli Bunga Mawar & Melati Segar',
+                'nominal' => 750000,
                 'metode_pembayaran' => 'Tunai / Cash',
-                'order_id'          => $order->id,
-                'pic_id'            => $admin->id,
-                'catatan'           => 'Beli di Pasar Bunga Kotabaru',
+                'order_id' => $order->id,
+                'pic_id' => $admin->id,
+                'catatan' => 'Beli di Pasar Bunga Kotabaru',
             ])
             ->call('create')
             ->assertHasNoFormErrors();
 
         $this->assertDatabaseHas('expenses', [
-            'kategori'          => 'Properti & Dekorasi',
-            'judul'             => 'Beli Bunga Mawar & Melati Segar',
-            'nominal'           => 750000,
-            'order_id'          => $order->id,
+            'kategori' => 'Properti & Dekorasi',
+            'judul' => 'Beli Bunga Mawar & Melati Segar',
+            'nominal' => 750000,
+            'order_id' => $order->id,
             'metode_pembayaran' => 'Tunai / Cash',
         ]);
 

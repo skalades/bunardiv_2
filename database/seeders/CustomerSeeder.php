@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Customer;
 use Illuminate\Database\Seeder;
 
 class CustomerSeeder extends Seeder
@@ -19,7 +19,7 @@ class CustomerSeeder extends Seeder
         ];
 
         foreach ($customers as $c) {
-            \App\Models\Customer::updateOrCreate(['nama' => $c['nama']], $c);
+            Customer::updateOrCreate(['nama' => $c['nama']], $c);
         }
     }
 }

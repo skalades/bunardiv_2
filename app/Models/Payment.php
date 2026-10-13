@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Payment extends Model
 {
     protected $fillable = [
-        'order_id', 'invoice_id', 'amount', 'payment_method', 'payment_date', 'reference_number', 'notes'
+        'order_id', 'invoice_id', 'amount', 'payment_method', 'payment_date', 'reference_number', 'notes',
     ];
 
     protected $casts = [
@@ -17,31 +17,32 @@ class Payment extends Model
     public static function getPaymentMethods(): array
     {
         $methods = [
-            'Tunai / Cash'     => 'Tunai / Cash',
-            'Transfer BCA'     => 'Transfer BCA',
+            'Tunai / Cash' => 'Tunai / Cash',
+            'Transfer BCA' => 'Transfer BCA',
             'Transfer Mandiri' => 'Transfer Mandiri',
-            'Transfer BRI'     => 'Transfer BRI',
-            'Transfer BNI'     => 'Transfer BNI',
-            'Transfer BSI'     => 'Transfer BSI',
-            'Transfer BJB'     => 'Transfer BJB',
+            'Transfer BRI' => 'Transfer BRI',
+            'Transfer BNI' => 'Transfer BNI',
+            'Transfer BSI' => 'Transfer BSI',
+            'Transfer BJB' => 'Transfer BJB',
         ];
 
         try {
             $setting = Setting::first();
             if ($setting && is_array($setting->bank_accounts)) {
                 foreach ($setting->bank_accounts as $bank) {
-                    if (!empty($bank['bank_name'])) {
+                    if (! empty($bank['bank_name'])) {
                         $name = trim($bank['bank_name']);
-                        $key = 'Transfer ' . $name;
+                        $key = 'Transfer '.$name;
                         $methods[$key] = $key;
                     }
                 }
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         $methods['QRIS / E-Wallet'] = 'QRIS / E-Wallet';
-        $methods['Kartu Kredit']    = 'Kartu Kredit';
-        $methods['Lainnya']         = 'Lainnya';
+        $methods['Kartu Kredit'] = 'Kartu Kredit';
+        $methods['Lainnya'] = 'Lainnya';
 
         return $methods;
     }

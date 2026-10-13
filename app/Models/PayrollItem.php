@@ -18,17 +18,17 @@ class PayrollItem extends Model
     ];
 
     protected $casts = [
-        'tanggal_dibayar'     => 'date',
-        'gaji_pokok'          => 'decimal:2',
+        'tanggal_dibayar' => 'date',
+        'gaji_pokok' => 'decimal:2',
         'tunjangan_transport' => 'decimal:2',
-        'tunjangan_makan'     => 'decimal:2',
-        'upah_event'          => 'decimal:2',
-        'bonus'               => 'decimal:2',
-        'lembur'              => 'decimal:2',
-        'potongan_kasbon'     => 'decimal:2',
-        'potongan_lain'       => 'decimal:2',
-        'total_bruto'         => 'decimal:2',
-        'total_bersih'        => 'decimal:2',
+        'tunjangan_makan' => 'decimal:2',
+        'upah_event' => 'decimal:2',
+        'bonus' => 'decimal:2',
+        'lembur' => 'decimal:2',
+        'potongan_kasbon' => 'decimal:2',
+        'potongan_lain' => 'decimal:2',
+        'total_bruto' => 'decimal:2',
+        'total_bersih' => 'decimal:2',
     ];
 
     public function payroll(): BelongsTo

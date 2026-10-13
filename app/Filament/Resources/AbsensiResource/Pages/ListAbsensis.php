@@ -37,7 +37,7 @@ class ListAbsensis extends ListRecords
                         ->label('Status Kehadiran')
                         ->options([
                             'hadir' => 'Hadir',
-                            'izin'  => 'Izin',
+                            'izin' => 'Izin',
                             'sakit' => 'Sakit',
                             'alpha' => 'Alpha',
                         ])
@@ -52,6 +52,7 @@ class ListAbsensis extends ListRecords
                                 ->mapWithKeys(function ($u) {
                                     $jabatan = $u->employeeProfile?->jabatan ?? 'Crew';
                                     $tipe = ucfirst($u->employeeProfile?->tipe ?? 'harian');
+
                                     return [$u->id => "{$u->name} ({$jabatan} - {$tipe})"];
                                 });
                         })
@@ -82,8 +83,8 @@ class ListAbsensis extends ListRecords
                                 'tanggal' => $tanggal,
                             ],
                             [
-                                'status'       => $status,
-                                'keterangan'   => $keterangan,
+                                'status' => $status,
+                                'keterangan' => $keterangan,
                                 'dicatat_oleh' => $adminId,
                             ]
                         );

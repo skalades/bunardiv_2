@@ -8,6 +8,12 @@ class OrderItem extends Model
 {
     protected $fillable = ['order_id', 'product_id', 'harga', 'qty', 'subtotal'];
 
+    protected $casts = [
+        'harga' => 'decimal:2',
+        'qty' => 'integer',
+        'subtotal' => 'decimal:2',
+    ];
+
     public function product()
     {
         return $this->belongsTo(Product::class);

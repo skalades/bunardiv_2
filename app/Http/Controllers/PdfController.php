@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
+use App\Models\Expense;
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\Setting;
-use App\Models\Expense;
 use App\Models\PayrollItem;
+use App\Models\Setting;
+use App\Models\WorkOrder;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class PdfController extends Controller
 {
@@ -17,12 +18,12 @@ class PdfController extends Controller
     {
         $order->load(['customer', 'items.product', 'payments']);
         $setting = Setting::getSettings();
-        
+
         $pdf = Pdf::loadView('pdf.invoice', [
             'order' => $order,
-            'setting' => $setting
+            'setting' => $setting,
         ])->setPaper('a4', 'portrait');
-        
+
         return $pdf->stream('invoice-'.$order->no_order.'.pdf');
     }
 
@@ -30,49 +31,49 @@ class PdfController extends Controller
     {
         $payment->load(['order.customer', 'invoice']);
         $setting = Setting::getSettings();
-        
+
         $pdf = Pdf::loadView('pdf.receipt', [
             'payment' => $payment,
-            'setting' => $setting
+            'setting' => $setting,
         ]);
-        
+
         return $pdf->stream('kwitansi-'.$payment->reference_number.'.pdf');
     }
 
-    public function spk(\App\Models\WorkOrder $workOrder)
+    public function spk(WorkOrder $workOrder)
     {
         $workOrder->load(['order.customer', 'pic', 'users.user', 'equipment.inventory']);
         $setting = Setting::getSettings();
-        
+
         $pdf = Pdf::loadView('pdf.spk', [
             'workOrder' => $workOrder,
-            'setting' => $setting
+            'setting' => $setting,
         ]);
-        
+
         return $pdf->stream('SPK-'.$workOrder->spk_number.'.pdf');
     }
 
-    public function suratJalan(\App\Models\WorkOrder $workOrder)
+    public function suratJalan(WorkOrder $workOrder)
     {
         $workOrder->load(['order.customer', 'pic', 'users.user', 'equipment.inventory']);
         $setting = Setting::getSettings();
-        
+
         $pdf = Pdf::loadView('pdf.surat-jalan', [
             'workOrder' => $workOrder,
-            'setting' => $setting
+            'setting' => $setting,
         ]);
-        
+
         return $pdf->stream('SuratJalan-'.$workOrder->surat_jalan_number.'.pdf');
     }
 
-    public function slipGaji(\App\Models\PayrollItem $payrollItem)
+    public function slipGaji(PayrollItem $payrollItem)
     {
         $payrollItem->load(['user.employeeProfile', 'payroll']);
         $setting = Setting::getSettings();
 
         $pdf = Pdf::loadView('pdf.slip-gaji', [
-            'item'    => $payrollItem,
-            'user'    => $payrollItem->user,
+            'item' => $payrollItem,
+            'user' => $payrollItem->user,
             'payroll' => $payrollItem->payroll,
             'setting' => $setting,
         ])->setPaper('a5', 'landscape');
@@ -123,7 +124,7 @@ class PdfController extends Controller
             ->get();
 
         // 5. Beban Penggajian (Payroll)
-        $payrollQuery = \App\Models\PayrollItem::with(['user', 'payroll'])
+        $payrollQuery = PayrollItem::with(['user', 'payroll'])
             ->whereHas('payroll', function ($q) use ($year, $month) {
                 $q->whereYear('created_at', $year);
                 if ($month !== 'all') {
@@ -146,11 +147,11 @@ class PdfController extends Controller
         $namaBulan = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
             5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
         $periodeLabel = $month === 'all'
             ? "Tahun {$year} (Januari - Desember)"
-            : ($namaBulan[(int) $month] ?? "Bulan {$month}") . " {$year}";
+            : ($namaBulan[(int) $month] ?? "Bulan {$month}")." {$year}";
 
         $docRef = sprintf('FIN-%04d-%s', $year, $month !== 'all' ? sprintf('%02d', (int) $month) : 'ANNUAL');
 
@@ -167,27 +168,46 @@ class PdfController extends Controller
         ];
 
         if ($month === 'all') {
+            $paymentsByMonth = Payment::whereYear('payment_date', $year)
+                ->get(['payment_date', 'amount'])
+                ->groupBy(fn ($p) => (int) Carbon::parse($p->payment_date)->month)
+                ->map(fn ($g) => (float) $g->sum('amount'));
+
+            $ordersByMonth = Order::whereYear('tanggal', $year)
+                ->get(['tanggal', 'total'])
+                ->groupBy(fn ($o) => (int) Carbon::parse($o->tanggal)->month)
+                ->map(fn ($g) => (float) $g->sum('total'));
+
+            $expensesByMonth = Expense::whereYear('tanggal', $year)
+                ->get(['tanggal', 'nominal'])
+                ->groupBy(fn ($e) => (int) Carbon::parse($e->tanggal)->month)
+                ->map(fn ($g) => (float) $g->sum('nominal'));
+
+            $payrollsByMonth = PayrollItem::whereHas('payroll', fn ($q) => $q->whereYear('created_at', $year))
+                ->with('payroll:id,created_at')
+                ->get(['payroll_id', 'total_bersih'])
+                ->groupBy(fn ($p) => (int) Carbon::parse($p->payroll?->created_at)->month)
+                ->map(fn ($g) => (float) $g->sum('total_bersih'));
+
             for ($m = 1; $m <= 12; $m++) {
-                $mIn = (float) Payment::whereYear('payment_date', $year)->whereMonth('payment_date', $m)->sum('amount');
-                $mOrd = (float) Order::whereYear('tanggal', $year)->whereMonth('tanggal', $m)->sum('total');
-                $mExp = (float) Expense::whereYear('tanggal', $year)->whereMonth('tanggal', $m)->sum('nominal');
-                $mPay = (float) \App\Models\PayrollItem::whereHas('payroll', function ($q) use ($year, $m) {
-                    $q->whereYear('created_at', $year)->whereMonth('created_at', $m);
-                })->sum('total_bersih');
+                $mIn = (float) ($paymentsByMonth[$m] ?? 0);
+                $mOrd = (float) ($ordersByMonth[$m] ?? 0);
+                $mExp = (float) ($expensesByMonth[$m] ?? 0);
+                $mPay = (float) ($payrollsByMonth[$m] ?? 0);
                 $mTotBeban = $mExp + $mPay;
                 $mAcc = $viewMode === 'kas' ? $mIn : $mOrd;
                 $mNet = $mAcc - $mTotBeban;
                 $mMargin = $mAcc > 0 ? round(($mNet / $mAcc) * 100, 1) : 0;
 
                 $monthlySummary[] = [
-                    'bulan_num'   => $m,
-                    'bulan'       => $namaBulan[$m],
-                    'pendapatan'  => $mAcc,
-                    'beban_ops'   => $mExp,
-                    'beban_gaji'  => $mPay,
+                    'bulan_num' => $m,
+                    'bulan' => $namaBulan[$m],
+                    'pendapatan' => $mAcc,
+                    'beban_ops' => $mExp,
+                    'beban_gaji' => $mPay,
                     'total_beban' => $mTotBeban,
                     'laba_bersih' => $mNet,
-                    'margin'      => $mMargin,
+                    'margin' => $mMargin,
                 ];
 
                 $qKey = $m <= 3 ? 'Q1' : ($m <= 6 ? 'Q2' : ($m <= 9 ? 'Q3' : 'Q4'));
@@ -203,35 +223,36 @@ class PdfController extends Controller
         $topExpenses = $allExpenses->take(15);
 
         $pdf = Pdf::loadView('pdf.laporan-keuangan', [
-            'setting'               => $setting,
-            'companyLogoPath'       => $companyLogoPath,
-            'year'                  => $year,
-            'month'                 => $month,
-            'viewMode'              => $viewMode,
-            'periodeLabel'          => $periodeLabel,
-            'docRef'                => $docRef,
-            'totalNilaiOrder'       => $totalNilaiOrder,
-            'totalOrderCount'       => $totalOrderCount,
-            'totalKasMasuk'         => $totalKasMasuk,
-            'piutangBerjalan'       => $piutangBerjalan,
+            'setting' => $setting,
+            'companyLogoPath' => $companyLogoPath,
+            'year' => $year,
+            'month' => $month,
+            'viewMode' => $viewMode,
+            'periodeLabel' => $periodeLabel,
+            'docRef' => $docRef,
+            'totalNilaiOrder' => $totalNilaiOrder,
+            'totalOrderCount' => $totalOrderCount,
+            'totalKasMasuk' => $totalKasMasuk,
+            'piutangBerjalan' => $piutangBerjalan,
             'totalBebanOperasional' => $totalBebanOperasional,
-            'totalBebanPayroll'     => $totalBebanPayroll,
-            'totalBeban'            => $totalBeban,
-            'labaBersih'            => $labaBersih,
-            'profitMargin'          => $profitMargin,
-            'collectionRate'        => $collectionRate,
-            'expenseRatio'          => $expenseRatio,
-            'netCashFlow'           => $netCashFlow,
-            'expenseBreakdown'      => $expenseBreakdown,
-            'monthlySummary'        => $monthlySummary,
-            'quarterlySummary'      => $quarterlySummary,
-            'topExpenses'           => $topExpenses,
-            'allExpenses'           => $allExpenses,
-            'orders'                => $orders,
-            'payrollItems'          => $payrollItems,
+            'totalBebanPayroll' => $totalBebanPayroll,
+            'totalBeban' => $totalBeban,
+            'labaBersih' => $labaBersih,
+            'profitMargin' => $profitMargin,
+            'collectionRate' => $collectionRate,
+            'expenseRatio' => $expenseRatio,
+            'netCashFlow' => $netCashFlow,
+            'expenseBreakdown' => $expenseBreakdown,
+            'monthlySummary' => $monthlySummary,
+            'quarterlySummary' => $quarterlySummary,
+            'topExpenses' => $topExpenses,
+            'allExpenses' => $allExpenses,
+            'orders' => $orders,
+            'payrollItems' => $payrollItems,
         ])->setPaper('a4', 'portrait');
 
         $cleanPeriode = str_replace([' ', '/', '\\'], '-', $periodeLabel);
+
         return $pdf->stream("Laporan-Keuangan-{$cleanPeriode}.pdf");
     }
 }

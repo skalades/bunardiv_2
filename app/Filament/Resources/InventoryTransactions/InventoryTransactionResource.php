@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class InventoryTransactionResource extends Resource
 {
@@ -21,6 +22,11 @@ class InventoryTransactionResource extends Resource
     public static function canViewAny(): bool
     {
         return auth()->user()?->role === 'admin';
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['inventory', 'order', 'pic']);
     }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

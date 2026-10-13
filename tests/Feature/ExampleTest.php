@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
     use RefreshDatabase;
+
     /**
      * A basic test example.
      */
@@ -16,7 +18,7 @@ class ExampleTest extends TestCase
         $response = $this->get('/');
         $response->assertRedirect('/login');
 
-        $user = \App\Models\User::first() ?? \App\Models\User::factory()->create();
+        $user = User::first() ?? User::factory()->create();
         $authResponse = $this->actingAs($user)->get('/');
         $authResponse->assertStatus(200);
     }

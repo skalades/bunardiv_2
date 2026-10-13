@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Product;
 use Illuminate\Database\Seeder;
 
 class ProductSeeder extends Seeder
@@ -27,7 +27,7 @@ class ProductSeeder extends Seeder
         ];
 
         foreach ($products as $p) {
-            \App\Models\Product::updateOrCreate(['nama' => $p['nama']], $p);
+            Product::updateOrCreate(['nama' => $p['nama']], $p);
         }
     }
 }

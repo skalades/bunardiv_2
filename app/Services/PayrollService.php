@@ -24,17 +24,17 @@ class PayrollService
 
         $existing = Payroll::where('tipe_periode', 'harian')->whereDate('tanggal', $date)->first();
         if ($existing && $existing->status === 'final') {
-            throw new \RuntimeException("Payroll harian tanggal " . $carbon->translatedFormat('d F Y') . " sudah final dan tidak dapat di-generate ulang.");
+            throw new \RuntimeException('Payroll harian tanggal '.$carbon->translatedFormat('d F Y').' sudah final dan tidak dapat di-generate ulang.');
         }
 
         return DB::transaction(function () use ($date, $carbon, $dibuatOleh, $existing, $onlyAttended) {
             $payroll = $existing ?? Payroll::create([
                 'tipe_periode' => 'harian',
-                'tanggal'      => $date,
-                'bulan'        => $carbon->month,
-                'tahun'        => $carbon->year,
-                'status'       => 'draft',
-                'dibuat_oleh'  => $dibuatOleh,
+                'tanggal' => $date,
+                'bulan' => $carbon->month,
+                'tahun' => $carbon->year,
+                'status' => 'draft',
+                'dibuat_oleh' => $dibuatOleh,
             ]);
 
             if ($existing) {
@@ -72,16 +72,16 @@ class PayrollService
                 }
 
                 $item = [
-                    'payroll_id'         => $payroll->id,
-                    'user_id'            => $user->id,
-                    'tipe_karyawan'      => $profile->tipe,
-                    'jumlah_hari_hadir'  => $jumlahHari,
+                    'payroll_id' => $payroll->id,
+                    'user_id' => $user->id,
+                    'tipe_karyawan' => $profile->tipe,
+                    'jumlah_hari_hadir' => $jumlahHari,
                     'jumlah_event_hadir' => $jumlahEvent,
-                    'bonus'              => 0,
-                    'lembur'             => 0,
-                    'potongan_kasbon'    => 0,
-                    'potongan_lain'      => 0,
-                    'status'             => 'draft',
+                    'bonus' => 0,
+                    'lembur' => 0,
+                    'potongan_kasbon' => 0,
+                    'potongan_lain' => 0,
+                    'status' => 'draft',
                 ];
 
                 if ($profile->tipe === 'harian') {
@@ -94,19 +94,19 @@ class PayrollService
                         $totalUpah = $profile->gaji_pokok;
                     }
 
-                    $item['gaji_pokok']          = $profile->gaji_pokok;
-                    $item['upah_event']          = $totalUpah;
+                    $item['gaji_pokok'] = $profile->gaji_pokok;
+                    $item['upah_event'] = $totalUpah;
                     $item['tunjangan_transport'] = $profile->tunjangan_transport * max(1, $jumlahEvent);
-                    $item['tunjangan_makan']     = $profile->tunjangan_makan * max(1, $jumlahEvent);
-                    $item['total_bruto']         = $totalUpah + $item['tunjangan_transport'] + $item['tunjangan_makan'];
+                    $item['tunjangan_makan'] = $profile->tunjangan_makan * max(1, $jumlahEvent);
+                    $item['total_bruto'] = $totalUpah + $item['tunjangan_transport'] + $item['tunjangan_makan'];
                 } else {
                     // Karyawan Bulanan: upah harian pro-rata (gaji pokok / 25 hari kerja)
                     $gajiHarian = round($profile->gaji_pokok / 25);
-                    $item['gaji_pokok']          = $gajiHarian;
-                    $item['upah_event']          = 0;
+                    $item['gaji_pokok'] = $gajiHarian;
+                    $item['upah_event'] = 0;
                     $item['tunjangan_transport'] = $profile->tunjangan_transport;
-                    $item['tunjangan_makan']     = $profile->tunjangan_makan;
-                    $item['total_bruto']         = ($gajiHarian * $jumlahHari)
+                    $item['tunjangan_makan'] = $profile->tunjangan_makan;
+                    $item['total_bruto'] = ($gajiHarian * $jumlahHari)
                         + ($profile->tunjangan_transport * $jumlahHari)
                         + ($profile->tunjangan_makan * $jumlahHari);
                 }
@@ -138,10 +138,10 @@ class PayrollService
         return DB::transaction(function () use ($bulan, $tahun, $dibuatOleh, $existing) {
             $payroll = $existing ?? Payroll::create([
                 'tipe_periode' => 'bulanan',
-                'bulan'        => $bulan,
-                'tahun'        => $tahun,
-                'status'       => 'draft',
-                'dibuat_oleh'  => $dibuatOleh,
+                'bulan' => $bulan,
+                'tahun' => $tahun,
+                'status' => 'draft',
+                'dibuat_oleh' => $dibuatOleh,
             ]);
 
             if ($existing) {
@@ -149,7 +149,7 @@ class PayrollService
             }
 
             $startDate = Carbon::create($tahun, $bulan, 1)->startOfMonth();
-            $endDate   = $startDate->copy()->endOfMonth();
+            $endDate = $startDate->copy()->endOfMonth();
 
             $users = User::whereHas('employeeProfile', fn ($q) => $q->where('status_aktif', true))
                 ->with('employeeProfile')
@@ -157,14 +157,14 @@ class PayrollService
 
             foreach ($users as $user) {
                 $profile = $user->employeeProfile;
-                $item    = ['payroll_id' => $payroll->id, 'user_id' => $user->id];
+                $item = ['payroll_id' => $payroll->id, 'user_id' => $user->id];
 
-                $item['tipe_karyawan']       = $profile->tipe;
-                $item['gaji_pokok']          = $profile->gaji_pokok;
-                $item['bonus']               = 0;
-                $item['lembur']              = 0;
+                $item['tipe_karyawan'] = $profile->tipe;
+                $item['gaji_pokok'] = $profile->gaji_pokok;
+                $item['bonus'] = 0;
+                $item['lembur'] = 0;
                 $item['tunjangan_transport'] = $profile->tunjangan_transport;
-                $item['tunjangan_makan']     = $profile->tunjangan_makan;
+                $item['tunjangan_makan'] = $profile->tunjangan_makan;
 
                 if ($profile->tipe === 'bulanan') {
                     $jumlahHadir = Attendance::where('user_id', $user->id)
@@ -173,9 +173,9 @@ class PayrollService
                         ->where('status', 'hadir')
                         ->count();
 
-                    $item['jumlah_hari_hadir']  = $jumlahHadir;
+                    $item['jumlah_hari_hadir'] = $jumlahHadir;
                     $item['jumlah_event_hadir'] = 0;
-                    $item['upah_event']         = 0;
+                    $item['upah_event'] = 0;
                     $item['total_bruto'] = $profile->gaji_pokok
                         + $profile->tunjangan_transport
                         + $profile->tunjangan_makan;
@@ -194,8 +194,8 @@ class PayrollService
                     });
 
                     $item['jumlah_event_hadir'] = $jumlahEvent;
-                    $item['jumlah_hari_hadir']  = 0;
-                    $item['upah_event']         = $totalUpah;
+                    $item['jumlah_hari_hadir'] = 0;
+                    $item['upah_event'] = $totalUpah;
                     $item['total_bruto'] = $totalUpah
                         + ($profile->tunjangan_transport * $jumlahEvent)
                         + ($profile->tunjangan_makan * $jumlahEvent);
@@ -212,9 +212,9 @@ class PayrollService
                     });
 
                 $item['potongan_kasbon'] = $totalKasbon;
-                $item['potongan_lain']   = 0;
-                $item['total_bersih']    = max(0, $item['total_bruto'] - $totalKasbon);
-                $item['status']          = 'draft';
+                $item['potongan_lain'] = 0;
+                $item['total_bersih'] = max(0, $item['total_bruto'] - $totalKasbon);
+                $item['status'] = 'draft';
 
                 PayrollItem::create($item);
             }
@@ -252,18 +252,18 @@ class PayrollService
 
                     EmployeeLoanPayment::create([
                         'employee_loan_id' => $loan->id,
-                        'jumlah_bayar'     => $potong,
-                        'tanggal'          => now()->toDateString(),
-                        'sumber'           => 'potong_gaji',
-                        'payroll_item_id'  => $item->id,
-                        'dicatat_oleh'     => $payroll->dibuat_oleh,
-                        'catatan'          => "Auto potong gaji {$payroll->nama_bulan}",
+                        'jumlah_bayar' => $potong,
+                        'tanggal' => now()->toDateString(),
+                        'sumber' => 'potong_gaji',
+                        'payroll_item_id' => $item->id,
+                        'dicatat_oleh' => $payroll->dibuat_oleh,
+                        'catatan' => "Auto potong gaji {$payroll->nama_bulan}",
                     ]);
                 }
             }
 
             $payroll->update([
-                'status'         => 'final',
+                'status' => 'final',
                 'tanggal_proses' => now()->toDateString(),
             ]);
         });

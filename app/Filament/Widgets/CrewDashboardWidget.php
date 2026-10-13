@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Attendance;
+use App\Models\EmployeeLoan;
 use App\Models\WorkOrderUser;
 use Filament\Notifications\Notification;
 use Filament\Widgets\Widget;
@@ -38,14 +39,14 @@ class CrewDashboardWidget extends Widget
 
         $now = now();
         $assignment->update([
-            'hadir'             => true,
-            'waktu_absen'       => $now,
-            'catatan_kehadiran' => 'Self check-in dashboard pada ' . $now->format('d M Y H:i') . ' WIB',
+            'hadir' => true,
+            'waktu_absen' => $now,
+            'catatan_kehadiran' => 'Self check-in dashboard pada '.$now->format('d M Y H:i').' WIB',
         ]);
 
         Notification::make()
             ->title('Absensi Berhasil!')
-            ->body('Kehadiran Anda pada SPK ' . ($assignment->workOrder->spk_number ?? '') . ' telah berhasil dicatat.')
+            ->body('Kehadiran Anda pada SPK '.($assignment->workOrder->spk_number ?? '').' telah berhasil dicatat.')
             ->success()
             ->send();
     }
@@ -60,17 +61,17 @@ class CrewDashboardWidget extends Widget
             ->first();
 
         if ($existing) {
-            Notification::make()->title('Anda sudah mencatat absensi hari ini (' . ucfirst($existing->status) . ')')->warning()->send();
+            Notification::make()->title('Anda sudah mencatat absensi hari ini ('.ucfirst($existing->status).')')->warning()->send();
 
             return;
         }
 
         try {
             Attendance::create([
-                'user_id'      => $userId,
-                'tanggal'      => $today,
-                'status'       => $status,
-                'keterangan'   => 'Self check-in harian dashboard pada ' . now()->format('H:i') . ' WIB',
+                'user_id' => $userId,
+                'tanggal' => $today,
+                'status' => $status,
+                'keterangan' => 'Self check-in harian dashboard pada '.now()->format('H:i').' WIB',
                 'dicatat_oleh' => $userId,
             ]);
 
@@ -116,19 +117,19 @@ class CrewDashboardWidget extends Widget
             ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
             ->count();
 
-        $kasbonAktif = \App\Models\EmployeeLoan::where('user_id', $user?->id)
+        $kasbonAktif = EmployeeLoan::where('user_id', $user?->id)
             ->where('status', 'disetujui')
             ->where('sisa_hutang', '>', 0)
             ->sum('sisa_hutang');
 
         return [
-            'user'               => $user,
-            'profile'            => $profile,
-            'todayAttendance'    => $todayAttendance,
-            'assignments'        => $assignments,
+            'user' => $user,
+            'profile' => $profile,
+            'todayAttendance' => $todayAttendance,
+            'assignments' => $assignments,
             'eventHadirBulanIni' => $eventHadirBulanIni,
-            'hariHadirBulanIni'  => $hariHadirBulanIni,
-            'kasbonAktif'        => $kasbonAktif,
+            'hariHadirBulanIni' => $hariHadirBulanIni,
+            'kasbonAktif' => $kasbonAktif,
         ];
     }
 }

@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PengeluaranResource\Pages;
 use App\Models\Expense;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\User;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -20,6 +21,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class PengeluaranResource extends Resource
 {
@@ -30,6 +32,11 @@ class PengeluaranResource extends Resource
     public static function canViewAny(): bool
     {
         return auth()->user()?->role === 'admin';
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['order', 'pic']);
     }
 
     public static function getNavigationIcon(): string
@@ -64,26 +71,26 @@ class PengeluaranResource extends Resource
 
     public static array $kategoriOptions = [
         'Bahan Baku & Catering' => 'Bahan Baku & Catering (Sayur, Daging, Bumbu, dll)',
-        'Properti & Dekorasi'   => 'Properti & Dekorasi (Bunga Segar, Kain, Lampu, dll)',
-        'Transport & Logistik'  => 'Transport & Logistik (BBM, Tol, Sewa Truk/Pickup)',
-        'Konsumsi Tim'          => 'Konsumsi Tim (Makan & Minum Kru Lapangan)',
-        'Operasional & Kantor'  => 'Operasional & Kantor (Listrik, Air, ATK, Kebersihan)',
-        'Pemeliharaan Alat'     => 'Pemeliharaan Alat (Service, Cuci Alat, Perbaikan)',
-        'Pemasaran & Iklan'     => 'Pemasaran & Iklan (Brosur, Medsos, Ads)',
-        'Lain-lain'             => 'Lain-lain',
+        'Properti & Dekorasi' => 'Properti & Dekorasi (Bunga Segar, Kain, Lampu, dll)',
+        'Transport & Logistik' => 'Transport & Logistik (BBM, Tol, Sewa Truk/Pickup)',
+        'Konsumsi Tim' => 'Konsumsi Tim (Makan & Minum Kru Lapangan)',
+        'Operasional & Kantor' => 'Operasional & Kantor (Listrik, Air, ATK, Kebersihan)',
+        'Pemeliharaan Alat' => 'Pemeliharaan Alat (Service, Cuci Alat, Perbaikan)',
+        'Pemasaran & Iklan' => 'Pemasaran & Iklan (Brosur, Medsos, Ads)',
+        'Lain-lain' => 'Lain-lain',
     ];
 
     public static array $metodeOptions = [
-        'Tunai / Cash'     => 'Tunai / Cash',
-        'Transfer BCA'     => 'Transfer BCA',
+        'Tunai / Cash' => 'Tunai / Cash',
+        'Transfer BCA' => 'Transfer BCA',
         'Transfer Mandiri' => 'Transfer Mandiri',
-        'Transfer BRI'     => 'Transfer BRI',
-        'Transfer BNI'     => 'Transfer BNI',
-        'Transfer BSI'     => 'Transfer BSI',
-        'Transfer BJB'     => 'Transfer BJB',
-        'QRIS / E-Wallet'  => 'QRIS / E-Wallet',
-        'Kartu Kredit'     => 'Kartu Kredit',
-        'Lainnya'          => 'Lainnya',
+        'Transfer BRI' => 'Transfer BRI',
+        'Transfer BNI' => 'Transfer BNI',
+        'Transfer BSI' => 'Transfer BSI',
+        'Transfer BJB' => 'Transfer BJB',
+        'QRIS / E-Wallet' => 'QRIS / E-Wallet',
+        'Kartu Kredit' => 'Kartu Kredit',
+        'Lainnya' => 'Lainnya',
     ];
 
     public static function form(Schema $schema): Schema
@@ -110,7 +117,7 @@ class PengeluaranResource extends Resource
                             ->searchable(),
                         Select::make('metode_pembayaran')
                             ->label('Metode Pembayaran')
-                            ->options(fn () => \App\Models\Payment::getPaymentMethods())
+                            ->options(fn () => Payment::getPaymentMethods())
                             ->default('Tunai / Cash')
                             ->required(),
                         TextInput::make('nominal')
@@ -170,12 +177,12 @@ class PengeluaranResource extends Resource
                     ->badge()
                     ->color(fn ($state) => match ($state) {
                         'Bahan Baku & Catering' => 'warning',
-                        'Properti & Dekorasi'   => 'info',
-                        'Transport & Logistik'  => 'primary',
-                        'Konsumsi Tim'          => 'gray',
-                        'Operasional & Kantor'  => 'success',
-                        'Pemeliharaan Alat'     => 'danger',
-                        default                 => 'gray',
+                        'Properti & Dekorasi' => 'info',
+                        'Transport & Logistik' => 'primary',
+                        'Konsumsi Tim' => 'gray',
+                        'Operasional & Kantor' => 'success',
+                        'Pemeliharaan Alat' => 'danger',
+                        default => 'gray',
                     }),
                 TextColumn::make('judul')
                     ->label('Keterangan')
@@ -204,7 +211,7 @@ class PengeluaranResource extends Resource
                 SelectFilter::make('kategori')
                     ->options(static::$kategoriOptions),
                 SelectFilter::make('metode_pembayaran')
-                    ->options(fn () => \App\Models\Payment::getPaymentMethods()),
+                    ->options(fn () => Payment::getPaymentMethods()),
                 SelectFilter::make('order_id')
                     ->label('Event / Pesanan')
                     ->relationship('order', 'nama_acara')
@@ -224,9 +231,9 @@ class PengeluaranResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListPengeluarans::route('/'),
+            'index' => Pages\ListPengeluarans::route('/'),
             'create' => Pages\CreatePengeluaran::route('/create'),
-            'edit'   => Pages\EditPengeluaran::route('/{record}/edit'),
+            'edit' => Pages\EditPengeluaran::route('/{record}/edit'),
         ];
     }
 }

@@ -22,6 +22,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class KasbonResource extends Resource
 {
@@ -30,6 +31,11 @@ class KasbonResource extends Resource
     public static function canViewAny(): bool
     {
         return auth()->user()?->role === 'admin';
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with(['user']);
     }
 
     public static function getNavigationIcon(): string
@@ -100,7 +106,7 @@ class KasbonResource extends Resource
                         Select::make('metode_cicilan')
                             ->label('Skema Pembayaran')
                             ->options([
-                                'manual'           => 'Manual (Dibayar Langsung oleh Karyawan)',
+                                'manual' => 'Manual (Dibayar Langsung oleh Karyawan)',
                                 'auto_potong_gaji' => 'Auto Potong Gaji (Payroll Bulanan)',
                             ])
                             ->default('manual')
@@ -115,10 +121,10 @@ class KasbonResource extends Resource
                         Select::make('status')
                             ->label('Status Persetujuan')
                             ->options([
-                                'pending'   => 'Menunggu Persetujuan',
+                                'pending' => 'Menunggu Persetujuan',
                                 'disetujui' => 'Disetujui',
-                                'lunas'     => 'Lunas',
-                                'ditolak'   => 'Ditolak',
+                                'lunas' => 'Lunas',
+                                'ditolak' => 'Ditolak',
                             ])
                             ->default('pending')
                             ->required(),
@@ -158,11 +164,11 @@ class KasbonResource extends Resource
                     ->label('Status')
                     ->badge()
                     ->color(fn ($state) => match ($state) {
-                        'pending'   => 'gray',
+                        'pending' => 'gray',
                         'disetujui' => 'warning',
-                        'lunas'     => 'success',
-                        'ditolak'   => 'danger',
-                        default     => 'gray',
+                        'lunas' => 'success',
+                        'ditolak' => 'danger',
+                        default => 'gray',
                     })
                     ->formatStateUsing(fn ($state) => ucfirst($state)),
                 TextColumn::make('metode_cicilan')
@@ -178,14 +184,14 @@ class KasbonResource extends Resource
             ->filters([
                 SelectFilter::make('status')
                     ->options([
-                        'pending'   => 'Pending',
+                        'pending' => 'Pending',
                         'disetujui' => 'Disetujui',
-                        'lunas'     => 'Lunas',
-                        'ditolak'   => 'Ditolak',
+                        'lunas' => 'Lunas',
+                        'ditolak' => 'Ditolak',
                     ]),
                 SelectFilter::make('metode_cicilan')
                     ->options([
-                        'manual'           => 'Manual',
+                        'manual' => 'Manual',
                         'auto_potong_gaji' => 'Auto Potong Gaji',
                     ]),
             ])
@@ -198,9 +204,9 @@ class KasbonResource extends Resource
                     ->requiresConfirmation()
                     ->action(function (EmployeeLoan $record) {
                         $record->update([
-                            'status'            => 'disetujui',
+                            'status' => 'disetujui',
                             'tanggal_disetujui' => now()->toDateString(),
-                            'disetujui_oleh'    => auth()->id(),
+                            'disetujui_oleh' => auth()->id(),
                         ]);
                         Notification::make()
                             ->title('Kasbon telah disetujui')
@@ -218,7 +224,7 @@ class KasbonResource extends Resource
                             ->currencyIdr()
                             ->required()
                             ->default(fn (EmployeeLoan $record) => (int) round($record->sisa_hutang))
-                            ->helperText(fn (EmployeeLoan $record) => 'Sisa saat ini: Rp ' . number_format($record->sisa_hutang, 0, ',', '.')),
+                            ->helperText(fn (EmployeeLoan $record) => 'Sisa saat ini: Rp '.number_format($record->sisa_hutang, 0, ',', '.')),
                         DatePicker::make('tanggal')
                             ->label('Tanggal Pembayaran')
                             ->default(now())
@@ -230,13 +236,13 @@ class KasbonResource extends Resource
                         $bayar = min((float) $data['jumlah_bayar'], (float) $record->sisa_hutang);
                         $record->payments()->create([
                             'jumlah_bayar' => $bayar,
-                            'tanggal'      => $data['tanggal'],
-                            'sumber'       => 'manual',
+                            'tanggal' => $data['tanggal'],
+                            'sumber' => 'manual',
                             'dicatat_oleh' => auth()->id(),
-                            'catatan'      => $data['catatan'] ?? null,
+                            'catatan' => $data['catatan'] ?? null,
                         ]);
                         Notification::make()
-                            ->title('Pembayaran cicilan Rp ' . number_format($bayar, 0, ',', '.') . ' berhasil dicatat')
+                            ->title('Pembayaran cicilan Rp '.number_format($bayar, 0, ',', '.').' berhasil dicatat')
                             ->success()
                             ->send();
                     }),
@@ -261,9 +267,9 @@ class KasbonResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListKasbons::route('/'),
+            'index' => Pages\ListKasbons::route('/'),
             'create' => Pages\CreateKasbon::route('/create'),
-            'edit'   => Pages\EditKasbon::route('/{record}/edit'),
+            'edit' => Pages\EditKasbon::route('/{record}/edit'),
         ];
     }
 }

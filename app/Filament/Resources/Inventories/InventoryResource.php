@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class InventoryResource extends Resource
 {
@@ -21,6 +22,13 @@ class InventoryResource extends Resource
     public static function canViewAny(): bool
     {
         return auth()->user()?->role === 'admin';
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withSum(['transactions as total_masuk' => fn ($q) => $q->where('tipe', 'masuk')], 'qty')
+            ->withSum(['transactions as total_keluar' => fn ($q) => $q->where('tipe', 'keluar')], 'qty');
     }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;

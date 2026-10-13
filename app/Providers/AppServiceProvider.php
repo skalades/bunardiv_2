@@ -2,6 +2,15 @@
 
 namespace App\Providers;
 
+use App\Support\SafeStripCharactersStateCast;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\StateCasts\StripCharactersStateCast;
+use Filament\Schemas\Schema;
+use Filament\Support\RawJs;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Number;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -12,9 +21,9 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(
-            \Filament\Schemas\Components\StateCasts\StripCharactersStateCast::class,
+            StripCharactersStateCast::class,
             function ($app, array $params = []) {
-                return new \App\Support\SafeStripCharactersStateCast($params['characters'] ?? []);
+                return new SafeStripCharactersStateCast($params['characters'] ?? []);
             }
         );
     }
@@ -24,19 +33,25 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        \Illuminate\Support\Number::useLocale('id');
-        \Illuminate\Support\Number::useCurrency('IDR');
+        Model::shouldBeStrict(! $this->app->isProduction());
 
-        \Filament\Tables\Table::configureUsing(function (\Filament\Tables\Table $table) {
+        if ($this->app->isProduction()) {
+            URL::forceScheme('https');
+        }
+
+        Number::useLocale('id');
+        Number::useCurrency('IDR');
+
+        Table::configureUsing(function (Table $table) {
             $table->defaultNumberLocale('id')->defaultCurrency('idr');
         });
 
-        \Filament\Schemas\Schema::configureUsing(function (\Filament\Schemas\Schema $schema) {
+        Schema::configureUsing(function (Schema $schema) {
             $schema->defaultNumberLocale('id')->defaultCurrency('idr');
         });
 
-        \Filament\Forms\Components\TextInput::macro('currencyIdr', function (string $prefix = 'Rp', int $precision = 0) {
-            /** @var \Filament\Forms\Components\TextInput $this */
+        TextInput::macro('currencyIdr', function (string $prefix = 'Rp', int $precision = 0) {
+            /** @var TextInput $this */
             return $this
                 ->prefix($prefix)
                 ->formatStateUsing(function ($state) {
@@ -46,9 +61,10 @@ class AppServiceProvider extends ServiceProvider
                     if (is_numeric($state)) {
                         return (int) round((float) $state);
                     }
+
                     return $state;
                 })
-                ->mask(\Filament\Support\RawJs::make('$money($input, \',\', \'.\', ' . $precision . ')'))
+                ->mask(RawJs::make('$money($input, \',\', \'.\', '.$precision.')'))
                 ->stripCharacters('.')
                 ->numeric();
         });

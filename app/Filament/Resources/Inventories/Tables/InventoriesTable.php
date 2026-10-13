@@ -27,11 +27,16 @@ class InventoriesTable
                 TextColumn::make('stok_berjalan')
                     ->label('Stok Berjalan (Estimasi)')
                     ->getStateUsing(function ($record) {
-                        return $record->stok_berjalan;
+                        if (is_null($record->stok_aktual)) {
+                            return null;
+                        }
+                        $masuk = $record->total_masuk ?? $record->transactions()->where('tipe', 'masuk')->sum('qty');
+                        $keluar = $record->total_keluar ?? $record->transactions()->where('tipe', 'keluar')->sum('qty');
+
+                        return $record->stok_aktual + $masuk - $keluar;
                     })
                     ->badge()
-                    ->color(fn ($state) => $state < 0 ? 'danger' : 'success')
-                    ->sortable(),
+                    ->color(fn ($state) => $state < 0 ? 'danger' : 'success'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
