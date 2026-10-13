@@ -2,6 +2,8 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\Order;
+use Carbon\Carbon;
 use Filament\Widgets\Widget;
 
 class MainDashboardWidget extends Widget
@@ -12,5 +14,13 @@ class MainDashboardWidget extends Widget
     public static function canView(): bool
     {
         return auth()->user()?->role === 'admin';
+    }
+
+    public function getTodayOrdersProperty()
+    {
+        return Order::with('customer')
+            ->whereDate('tanggal', Carbon::today())
+            ->orderBy('jam', 'asc')
+            ->get();
     }
 }

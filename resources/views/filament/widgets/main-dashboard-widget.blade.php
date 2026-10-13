@@ -171,7 +171,12 @@
                     </li>
                     <li class="c-notification-item">
                         <div class="c-dot gold"></div>
-                        <span><b>0</b> jadwal hari ini.</span>
+                        <span>
+                            <a href="/kalender" style="color: inherit; text-decoration: none;">
+                                <b>{{ $this->today_orders->count() }}</b> jadwal hari ini.
+                                <span style="color: var(--accent-gold); font-size: 11px; margin-left: 4px;">(Lihat Kalender &rarr;)</span>
+                            </a>
+                        </span>
                     </li>
                     <li class="c-notification-item">
                         <div class="c-dot green"></div>
@@ -189,10 +194,32 @@
                         <i class="ph ph-calendar-blank" style="vertical-align: middle; margin-right: 6px;"></i> 
                         Jadwal Hari Ini
                     </div>
+                    <a href="/kalender" style="font-size: 11px; color: var(--accent-gold); text-decoration: none; font-weight: 500;">
+                        Kalender Lengkap &rarr;
+                    </a>
                 </div>
-                <div class="c-schedule-empty">
-                    Tidak ada jadwal hari ini.
-                </div>
+                @if($this->today_orders->count() > 0)
+                    <div class="c-orders-list" style="margin-top: 8px;">
+                        @foreach($this->today_orders as $tOrder)
+                            <a href="/kalender" style="text-decoration: none; color: inherit;">
+                                <div class="c-order-item" style="padding: 10px 14px;">
+                                    <div class="c-order-info">
+                                        <h4>{{ $tOrder->nama_acara }} <span>{{ $tOrder->no_order }}</span></h4>
+                                        <p>{{ $tOrder->jam ? substr($tOrder->jam, 0, 5) . ' WIB' : 'Waktu TBA' }} &bull; {{ $tOrder->venue ?? 'Venue belum diisi' }}</p>
+                                    </div>
+                                    <div class="c-badge masuk" style="font-size: 9px;">{{ strtoupper($tOrder->status) }}</div>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="c-schedule-empty" style="flex-direction: column; gap: 8px;">
+                        <div>Tidak ada acara hari ini.</div>
+                        <a href="/kalender" class="c-badge dp" style="text-decoration: none; padding: 6px 12px;">
+                            Buka Kalender Jadwal
+                        </a>
+                    </div>
+                @endif
             </div>
 
             <div class="c-card">
