@@ -62,13 +62,16 @@ class PaymentsRelationManager extends RelationManager
                         return $unpaidInv?->id ?? $order->invoices->last()?->id;
                     })
                     ->live()
-                    ->afterStateUpdated(function ($set, $state) {
+                    ->afterStateUpdated(function ($set, $state, $livewire) {
                         if ($state) {
                             $inv = Invoice::find($state);
                             if ($inv) {
+                                $order = $livewire->getOwnerRecord();
+                                $sisaOrder = $order ? max(0, $order->total - $order->payments()->sum('amount')) : 0;
                                 $paidForInv = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
                                 $sisaInv = max(0, $inv->nominal_tagihan - $paidForInv);
-                                $set('amount', (int) round($sisaInv > 0 ? $sisaInv : $inv->nominal_tagihan));
+                                $targetAmount = $sisaInv > 0 ? $sisaInv : $inv->nominal_tagihan;
+                                $set('amount', (int) round($sisaOrder > 0 ? min($targetAmount, $sisaOrder) : $targetAmount));
                             }
                         }
                     })
@@ -82,6 +85,7 @@ class PaymentsRelationManager extends RelationManager
                         $order = $livewire->getOwnerRecord();
                         if (! $order) return 0;
                         $order->loadMissing('invoices');
+                        $sisaOrder = max(0, $order->total - $order->payments()->sum('amount'));
                         $invoiceId = $get('invoice_id');
                         if (! $invoiceId) {
                             $unpaidInv = $order->invoices->first(function ($inv) {
@@ -97,12 +101,14 @@ class PaymentsRelationManager extends RelationManager
                             $paid = \App\Models\Payment::where('invoice_id', $invoice->id)->sum('amount');
                             $sisaInv = max(0, $invoice->nominal_tagihan - $paid);
                             if ($sisaInv > 0) {
-                                return (int) round($sisaInv);
+                                return (int) round($sisaOrder > 0 ? min($sisaInv, $sisaOrder) : $sisaInv);
                             }
                         }
 
-                        return (int) round(max(0, $order->total - $order->payments()->sum('amount')));
+                        return (int) round($sisaOrder);
                     })
+                    ->maxValue(fn ($livewire) => $livewire->getOwnerRecord() ? max(0, $livewire->getOwnerRecord()->total - $livewire->getOwnerRecord()->payments()->sum('amount')) : null)
+                    ->minValue(1)
                     ->helperText(function ($get, $livewire) {
                         $invoiceId = $get('invoice_id');
                         if ($invoiceId && ($inv = Invoice::find($invoiceId))) {
@@ -119,15 +125,7 @@ class PaymentsRelationManager extends RelationManager
                     }),
                 Select::make('payment_method')
                     ->label('Metode Pembayaran')
-                    ->options([
-                        'Transfer BCA'     => 'Transfer BCA',
-                        'Transfer Mandiri' => 'Transfer Mandiri',
-                        'Transfer BRI'     => 'Transfer BRI',
-                        'Tunai / Cash'     => 'Tunai / Cash',
-                        'QRIS / E-Wallet'  => 'QRIS / E-Wallet',
-                        'Kartu Kredit'     => 'Kartu Kredit',
-                        'Lainnya'          => 'Lainnya',
-                    ])
+                    ->options(fn () => \App\Models\Payment::getPaymentMethods())
                     ->default('Transfer BCA')
                     ->required(),
                 DatePicker::make('payment_date')

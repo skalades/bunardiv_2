@@ -512,7 +512,7 @@
                     <span>Tampilkan SPK Persiapan</span>
                 </label>
 
-                <a href="/orders/create" class="cal-btn-pill active" style="text-decoration: none;">
+                <a href="{{ \App\Filament\Resources\OrderResource::getUrl('create', ['tanggal' => $selectedDate ?? now()->toDateString()]) }}" class="cal-btn-pill active" style="text-decoration: none;">
                     <i class="ph ph-plus-circle" style="font-size: 16px;"></i>
                     Pesanan Baru
                 </a>

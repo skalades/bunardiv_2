@@ -41,14 +41,26 @@ class Setting extends Model
             return null;
         }
 
-        $candidates = [
-            storage_path('app/public/' . $this->company_logo),
-            public_path('storage/' . $this->company_logo),
-            public_path($this->company_logo),
-        ];
+        $cleanPath = ltrim($this->company_logo, '/\\');
+        $withoutStorage = preg_replace('/^storage[\/\\\\]/', '', $cleanPath);
+        $publicDiskPath = null;
+        try {
+            $publicDiskPath = \Illuminate\Support\Facades\Storage::disk('public')->path($withoutStorage);
+        } catch (\Throwable $e) {}
+
+        $candidates = array_filter(array_unique([
+            $publicDiskPath,
+            storage_path('app/public/' . $withoutStorage),
+            public_path('storage/' . $withoutStorage),
+            storage_path('app/public/' . $cleanPath),
+            public_path($cleanPath),
+            storage_path('app/private/' . $withoutStorage),
+            storage_path('app/private/' . $cleanPath),
+            public_path('storage/' . $cleanPath),
+        ]));
 
         foreach ($candidates as $candidate) {
-            if (file_exists($candidate)) {
+            if ($candidate && file_exists($candidate)) {
                 return $candidate;
             }
         }

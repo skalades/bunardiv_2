@@ -279,7 +279,7 @@
                     @empty
                         <div class="c-schedule-empty" style="flex-direction: column; gap: 8px;">
                             <div>Belum ada pesanan terdaftar.</div>
-                            <a href="{{ url('/admin/orders/create') }}" class="c-badge dp" style="text-decoration: none; padding: 6px 12px;">
+                            <a href="{{ \App\Filament\Resources\OrderResource::getUrl('create') }}" class="c-badge dp" style="text-decoration: none; padding: 6px 12px;">
                                 + Buat Pesanan Baru
                             </a>
                         </div>

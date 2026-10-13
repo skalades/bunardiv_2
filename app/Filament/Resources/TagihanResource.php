@@ -71,9 +71,17 @@ class TagihanResource extends Resource
                 TextColumn::make('sisa')
                     ->label('Sisa Tagihan')
                     ->state(function (Order $record): float {
-                        return $record->total - $record->payments()->sum('amount');
+                        return (float) ($record->total - $record->payments()->sum('amount'));
                     })
-                    ->money('idr', decimalPlaces: 0)
+                    ->formatStateUsing(function (Order $record, $state): string {
+                        if ($state < 0) {
+                            return 'Rp 0 (Lebih Bayar Rp ' . number_format(abs($state), 0, ',', '.') . ')';
+                        }
+                        if ($state == 0) {
+                            return 'Rp 0 (LUNAS)';
+                        }
+                        return 'Rp ' . number_format($state, 0, ',', '.');
+                    })
                     ->color(fn ($state) => $state > 0 ? 'danger' : 'success')
                     ->weight('bold'),
             ])
@@ -209,13 +217,15 @@ class TagihanResource extends Resource
                                 return $unpaidInv?->id ?? $record->invoices->last()?->id;
                             })
                             ->live()
-                            ->afterStateUpdated(function ($set, $state) {
+                            ->afterStateUpdated(function ($set, $state, Order $record) {
                                 if ($state) {
                                     $inv = Invoice::find($state);
                                     if ($inv) {
+                                        $sisaOrder = max(0, $record->total - $record->payments()->sum('amount'));
                                         $paidForInv = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
                                         $sisaInv = max(0, $inv->nominal_tagihan - $paidForInv);
-                                        $set('amount', (int) round($sisaInv > 0 ? $sisaInv : $inv->nominal_tagihan));
+                                        $targetAmount = $sisaInv > 0 ? $sisaInv : $inv->nominal_tagihan;
+                                        $set('amount', (int) round($sisaOrder > 0 ? min($targetAmount, $sisaOrder) : $targetAmount));
                                     }
                                 }
                             })
@@ -227,6 +237,7 @@ class TagihanResource extends Resource
                             ->required()
                             ->default(function (Order $record, $get) {
                                 $record->loadMissing('invoices');
+                                $sisaOrder = max(0, $record->total - $record->payments()->sum('amount'));
                                 $invoiceId = $get('invoice_id');
                                 if (! $invoiceId) {
                                     $unpaidInv = $record->invoices->first(function ($inv) {
@@ -242,12 +253,14 @@ class TagihanResource extends Resource
                                     $paid = \App\Models\Payment::where('invoice_id', $invoice->id)->sum('amount');
                                     $sisaInv = max(0, $invoice->nominal_tagihan - $paid);
                                     if ($sisaInv > 0) {
-                                        return (int) round($sisaInv);
+                                        return (int) round($sisaOrder > 0 ? min($sisaInv, $sisaOrder) : $sisaInv);
                                     }
                                 }
 
-                                return (int) round(max(0, $record->total - $record->payments()->sum('amount')));
+                                return (int) round($sisaOrder);
                             })
+                            ->maxValue(fn (Order $record) => max(0, $record->total - $record->payments()->sum('amount')))
+                            ->minValue(1)
                             ->helperText(function ($get, Order $record) {
                                 $invoiceId = $get('invoice_id');
                                 if ($invoiceId && ($inv = Invoice::find($invoiceId))) {
@@ -260,15 +273,7 @@ class TagihanResource extends Resource
                             }),
                         Select::make('payment_method')
                             ->label('Metode Pembayaran')
-                            ->options([
-                                'Transfer BCA'     => 'Transfer BCA',
-                                'Transfer Mandiri' => 'Transfer Mandiri',
-                                'Transfer BRI'     => 'Transfer BRI',
-                                'Tunai / Cash'     => 'Tunai / Cash',
-                                'QRIS / E-Wallet'  => 'QRIS / E-Wallet',
-                                'Kartu Kredit'     => 'Kartu Kredit',
-                                'Lainnya'          => 'Lainnya',
-                            ])
+                            ->options(fn () => \App\Models\Payment::getPaymentMethods())
                             ->default('Transfer BCA')
                             ->required(),
                         DatePicker::make('payment_date')

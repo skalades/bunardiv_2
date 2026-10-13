@@ -14,6 +14,38 @@ class Payment extends Model
         'payment_date' => 'date',
     ];
 
+    public static function getPaymentMethods(): array
+    {
+        $methods = [
+            'Tunai / Cash'     => 'Tunai / Cash',
+            'Transfer BCA'     => 'Transfer BCA',
+            'Transfer Mandiri' => 'Transfer Mandiri',
+            'Transfer BRI'     => 'Transfer BRI',
+            'Transfer BNI'     => 'Transfer BNI',
+            'Transfer BSI'     => 'Transfer BSI',
+            'Transfer BJB'     => 'Transfer BJB',
+        ];
+
+        try {
+            $setting = Setting::first();
+            if ($setting && is_array($setting->bank_accounts)) {
+                foreach ($setting->bank_accounts as $bank) {
+                    if (!empty($bank['bank_name'])) {
+                        $name = trim($bank['bank_name']);
+                        $key = 'Transfer ' . $name;
+                        $methods[$key] = $key;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        $methods['QRIS / E-Wallet'] = 'QRIS / E-Wallet';
+        $methods['Kartu Kredit']    = 'Kartu Kredit';
+        $methods['Lainnya']         = 'Lainnya';
+
+        return $methods;
+    }
+
     protected static function booted(): void
     {
         static::saved(function (Payment $payment) {

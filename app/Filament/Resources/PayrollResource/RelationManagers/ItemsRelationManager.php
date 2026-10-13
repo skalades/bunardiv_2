@@ -83,13 +83,9 @@ class ItemsRelationManager extends RelationManager
                     ->label('Tanggal Dibayar')
                     ->default(now()),
                 Select::make('metode_bayar')
-                    ->label('Metode Transfer')
-                    ->options([
-                        'Transfer BCA'     => 'Transfer BCA',
-                        'Transfer Mandiri' => 'Transfer Mandiri',
-                        'Transfer BRI'     => 'Transfer BRI',
-                        'Tunai / Cash'     => 'Tunai / Cash',
-                    ]),
+                    ->label('Metode Pembayaran')
+                    ->options(fn () => \App\Models\Payment::getPaymentMethods())
+                    ->default('Transfer BCA'),
                 Textarea::make('catatan')
                     ->label('Catatan'),
             ]);
@@ -168,13 +164,10 @@ class ItemsRelationManager extends RelationManager
                     ->form([
                         DatePicker::make('tanggal_dibayar')->label('Tgl Bayar')->default(now())->required(),
                         Select::make('metode_bayar')
-                            ->options([
-                                'Transfer BCA'     => 'Transfer BCA',
-                                'Transfer Mandiri' => 'Transfer Mandiri',
-                                'Transfer BRI'     => 'Transfer BRI',
-                                'Tunai / Cash'     => 'Tunai / Cash',
-                            ])
-                            ->default('Transfer BCA')->required(),
+                            ->label('Metode Pembayaran')
+                            ->options(fn () => \App\Models\Payment::getPaymentMethods())
+                            ->default('Transfer BCA')
+                            ->required(),
                     ])
                     ->action(function (PayrollItem $record, array $data) {
                         $record->update([

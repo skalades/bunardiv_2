@@ -45,12 +45,8 @@ class Settings extends Page implements HasForms
 
     public function mount(): void
     {
-        $setting = Setting::first();
-        if ($setting) {
-            $this->form->fill($setting->toArray());
-        } else {
-            $this->form->fill();
-        }
+        $setting = Setting::first() ?? Setting::getSettings();
+        $this->form->fill($setting->toArray());
     }
 
     public function form(\Filament\Schemas\Schema $form): \Filament\Schemas\Schema
@@ -63,7 +59,13 @@ class Settings extends Page implements HasForms
                         Textarea::make('company_address')->label('Alamat Lengkap')->columnSpanFull(),
                         TextInput::make('company_phone')->label('No. Telepon / WA'),
                         TextInput::make('company_email')->label('Email')->email(),
-                        FileUpload::make('company_logo')->label('Logo')->image()->directory('logos')->columnSpanFull(),
+                        FileUpload::make('company_logo')
+                            ->label('Logo Perusahaan')
+                            ->image()
+                            ->disk('public')
+                            ->directory('logos')
+                            ->visibility('public')
+                            ->columnSpanFull(),
                         Textarea::make('invoice_notes')->label('Catatan Invoice (S&K)')->columnSpanFull(),
                     ])->columns(2),
                 \Filament\Schemas\Components\Section::make('Informasi Rekening Pembayaran')

@@ -73,6 +73,9 @@ class PengeluaranResource extends Resource
         'Transfer BCA'     => 'Transfer BCA',
         'Transfer Mandiri' => 'Transfer Mandiri',
         'Transfer BRI'     => 'Transfer BRI',
+        'Transfer BNI'     => 'Transfer BNI',
+        'Transfer BSI'     => 'Transfer BSI',
+        'Transfer BJB'     => 'Transfer BJB',
         'QRIS / E-Wallet'  => 'QRIS / E-Wallet',
         'Kartu Kredit'     => 'Kartu Kredit',
         'Lainnya'          => 'Lainnya',
@@ -102,7 +105,7 @@ class PengeluaranResource extends Resource
                             ->searchable(),
                         Select::make('metode_pembayaran')
                             ->label('Metode Pembayaran')
-                            ->options(static::$metodeOptions)
+                            ->options(fn () => \App\Models\Payment::getPaymentMethods())
                             ->default('Tunai / Cash')
                             ->required(),
                         TextInput::make('nominal')
@@ -196,7 +199,7 @@ class PengeluaranResource extends Resource
                 SelectFilter::make('kategori')
                     ->options(static::$kategoriOptions),
                 SelectFilter::make('metode_pembayaran')
-                    ->options(static::$metodeOptions),
+                    ->options(fn () => \App\Models\Payment::getPaymentMethods()),
                 SelectFilter::make('order_id')
                     ->label('Event / Pesanan')
                     ->relationship('order', 'nama_acara')

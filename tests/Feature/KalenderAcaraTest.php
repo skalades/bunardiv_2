@@ -117,4 +117,64 @@ class KalenderAcaraTest extends TestCase
             ->call('closeModal')
             ->assertSet('selectedOrderId', null);
     }
+
+    public function test_pesanan_baru_button_points_to_pos_cepat_create_order_url(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/kalender');
+        $response->assertSuccessful();
+        $response->assertSee('/orders/create');
+
+        // Test POS Cepat page loads successfully
+        $createResponse = $this->actingAs($this->admin)->get('/orders/create');
+        $createResponse->assertSuccessful();
+        $createResponse->assertSee('POS Cepat');
+    }
+
+    public function test_admin_can_create_order_via_pos_cepat_page(): void
+    {
+        $customer = Customer::create(['nama' => 'Pak Budi', 'no_telp' => '081234567']);
+        $product = \App\Models\Product::create([
+            'nama' => 'Paket Prasmanan Test',
+            'kategori' => 'CATERING',
+            'harga' => 50000,
+        ]);
+
+        $cartData = json_encode([
+            [
+                'id' => $product->id,
+                'name' => $product->nama,
+                'price' => 50000,
+                'qty' => 10,
+            ]
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test(\App\Filament\Resources\OrderResource\Pages\CreateOrder::class)
+            ->fillForm([
+                'customer_id'    => $customer->id,
+                'nama_acara'     => 'Syukuran Kantor',
+                'jenis_acara'    => 'Corporate',
+                'tanggal'        => '2026-10-28',
+                'jam'            => '12:00:00',
+                'venue'          => 'Gedung Menara',
+                'cart_data'      => $cartData,
+                'subtotal'       => 500000,
+                'total'          => 500000,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('orders', [
+            'customer_id' => $customer->id,
+            'nama_acara'  => 'Syukuran Kantor',
+            'total'       => 500000,
+        ]);
+
+        $order = Order::where('nama_acara', 'Syukuran Kantor')->first();
+        $this->assertNotNull($order);
+        $this->assertStringStartsWith('ORD-', $order->no_order);
+        $this->assertCount(1, $order->items);
+        $this->assertEquals(50000, $order->items->first()->harga);
+        $this->assertEquals(10, $order->items->first()->qty);
+    }
 }
