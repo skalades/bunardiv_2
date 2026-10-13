@@ -32,11 +32,30 @@ class PaymentsRelationManager extends RelationManager
             ->components([
                 Select::make('invoice_id')
                     ->label('Invoice Terkait')
-                    ->options(function ($livewire) {
+                    ->options(function ($livewire, $record) {
                         $order = $livewire->getOwnerRecord();
                         if (! $order) return [];
-                        $order->loadMissing('invoices');
-                        if ($order->invoices->isEmpty()) {
+                        $order->loadMissing(['invoices', 'payments']);
+
+                        $sisaOrder = max(0, $order->total - $order->payments()->sum('amount'));
+
+                        $options = [];
+                        foreach ($order->invoices as $inv) {
+                            $paidForInv = \App\Models\Payment::where('invoice_id', $inv->id)
+                                ->when($record?->id, fn ($q) => $q->where('id', '!=', $record->id))
+                                ->sum('amount');
+                            
+                            $isMainInv = ($inv->no_invoice === 'INV-' . $order->no_order);
+                            $sisaInv = $isMainInv 
+                                ? $sisaOrder 
+                                : max(0, $inv->nominal_tagihan - $paidForInv);
+
+                            if ($sisaInv > 0 || ($record && $record->invoice_id === $inv->id)) {
+                                $options[$inv->id] = "{$inv->no_invoice} - " . ($inv->judul_tagihan ?: 'Tagihan') . " (Sisa: Rp " . number_format($sisaInv, 0, ',', '.') . ")";
+                            }
+                        }
+
+                        if (empty($options) && $sisaOrder > 0) {
                             $mainInv = $order->invoices()->firstOrCreate(
                                 ['no_invoice' => 'INV-' . $order->no_order],
                                 [
@@ -45,21 +64,31 @@ class PaymentsRelationManager extends RelationManager
                                     'jatuh_tempo'     => $order->tanggal ?? now(),
                                 ]
                             );
-                            return [$mainInv->id => "{$mainInv->no_invoice} - {$mainInv->judul_tagihan} (Rp " . number_format($mainInv->nominal_tagihan, 0, ',', '.') . ")"];
+                            $options[$mainInv->id] = "{$mainInv->no_invoice} - {$mainInv->judul_tagihan} (Sisa: Rp " . number_format($sisaOrder, 0, ',', '.') . ")";
                         }
-                        return $order->invoices->mapWithKeys(fn ($inv) => [
-                            $inv->id => "{$inv->no_invoice} - " . ($inv->judul_tagihan ?: 'Tagihan') . " (Rp " . number_format($inv->nominal_tagihan, 0, ',', '.') . ")"
-                        ]);
+
+                        return $options;
                     })
                     ->default(function ($livewire) {
                         $order = $livewire->getOwnerRecord();
                         if (! $order) return null;
-                        $order->loadMissing('invoices');
-                        $unpaidInv = $order->invoices->first(function ($inv) {
+                        $order->loadMissing(['invoices', 'payments']);
+
+                        $sisaOrder = max(0, $order->total - $order->payments()->sum('amount'));
+                        if ($sisaOrder <= 0) return null;
+
+                        $unpaidInv = $order->invoices->first(function ($inv) use ($order) {
+                            if ($inv->no_invoice === 'INV-' . $order->no_order) return false;
                             $paid = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
                             return ($inv->nominal_tagihan - $paid) > 0;
                         });
-                        return $unpaidInv?->id ?? $order->invoices->last()?->id;
+
+                        if ($unpaidInv) {
+                            return $unpaidInv->id;
+                        }
+
+                        $mainInv = $order->invoices->firstWhere('no_invoice', 'INV-' . $order->no_order);
+                        return $mainInv?->id ?? $order->invoices->first()?->id;
                     })
                     ->live()
                     ->afterStateUpdated(function ($set, $state, $livewire) {
@@ -69,8 +98,9 @@ class PaymentsRelationManager extends RelationManager
                                 $order = $livewire->getOwnerRecord();
                                 $sisaOrder = $order ? max(0, $order->total - $order->payments()->sum('amount')) : 0;
                                 $paidForInv = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
-                                $sisaInv = max(0, $inv->nominal_tagihan - $paidForInv);
-                                $targetAmount = $sisaInv > 0 ? $sisaInv : $inv->nominal_tagihan;
+                                $isMainInv = ($order && $inv->no_invoice === 'INV-' . $order->no_order);
+                                $sisaInv = $isMainInv ? $sisaOrder : max(0, $inv->nominal_tagihan - $paidForInv);
+                                $targetAmount = $sisaInv > 0 ? $sisaInv : $sisaOrder;
                                 $set('amount', (int) round($sisaOrder > 0 ? min($targetAmount, $sisaOrder) : $targetAmount));
                             }
                         }
@@ -84,24 +114,28 @@ class PaymentsRelationManager extends RelationManager
                     ->default(function ($livewire, $get) {
                         $order = $livewire->getOwnerRecord();
                         if (! $order) return 0;
-                        $order->loadMissing('invoices');
+                        $order->loadMissing(['invoices', 'payments']);
                         $sisaOrder = max(0, $order->total - $order->payments()->sum('amount'));
+                        if ($sisaOrder <= 0) return 0;
+
                         $invoiceId = $get('invoice_id');
-                        if (! $invoiceId) {
-                            $unpaidInv = $order->invoices->first(function ($inv) {
+                        $invoice = $invoiceId ? Invoice::find($invoiceId) : null;
+
+                        if (! $invoice) {
+                            $unpaidInv = $order->invoices->first(function ($inv) use ($order) {
+                                if ($inv->no_invoice === 'INV-' . $order->no_order) return false;
                                 $paid = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
                                 return ($inv->nominal_tagihan - $paid) > 0;
                             });
-                            $invoice = $unpaidInv ?? $order->invoices->last();
-                        } else {
-                            $invoice = Invoice::find($invoiceId);
+                            $invoice = $unpaidInv ?? $order->invoices->firstWhere('no_invoice', 'INV-' . $order->no_order);
                         }
 
                         if ($invoice) {
                             $paid = \App\Models\Payment::where('invoice_id', $invoice->id)->sum('amount');
-                            $sisaInv = max(0, $invoice->nominal_tagihan - $paid);
+                            $isMainInv = ($invoice->no_invoice === 'INV-' . $order->no_order);
+                            $sisaInv = $isMainInv ? $sisaOrder : max(0, $invoice->nominal_tagihan - $paid);
                             if ($sisaInv > 0) {
-                                return (int) round($sisaOrder > 0 ? min($sisaInv, $sisaOrder) : $sisaInv);
+                                return (int) round(min($sisaInv, $sisaOrder));
                             }
                         }
 
@@ -110,18 +144,19 @@ class PaymentsRelationManager extends RelationManager
                     ->maxValue(fn ($livewire) => $livewire->getOwnerRecord() ? max(0, $livewire->getOwnerRecord()->total - $livewire->getOwnerRecord()->payments()->sum('amount')) : null)
                     ->minValue(1)
                     ->helperText(function ($get, $livewire) {
+                        $order = $livewire->getOwnerRecord();
+                        $sisaOrder = $order ? max(0, $order->total - $order->payments()->sum('amount')) : 0;
                         $invoiceId = $get('invoice_id');
                         if ($invoiceId && ($inv = Invoice::find($invoiceId))) {
                             $paid = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
-                            $sisa = max(0, $inv->nominal_tagihan - $paid);
-                            return "Nominal invoice ini: Rp " . number_format($inv->nominal_tagihan, 0, ',', '.') . " (Sisa tagihan invoice: Rp " . number_format($sisa, 0, ',', '.') . ")";
+                            $isMainInv = ($order && $inv->no_invoice === 'INV-' . $order->no_order);
+                            $sisaInv = $isMainInv ? $sisaOrder : max(0, $inv->nominal_tagihan - $paid);
+                            if ($sisaInv <= 0) {
+                                return "Invoice ini sudah LUNAS. (Sisa tagihan order: Rp " . number_format($sisaOrder, 0, ',', '.') . ")";
+                            }
+                            return "Sisa tagihan invoice ini: Rp " . number_format($sisaInv, 0, ',', '.') . " (Total order sisa: Rp " . number_format($sisaOrder, 0, ',', '.') . ")";
                         }
-                        $order = $livewire->getOwnerRecord();
-                        if ($order) {
-                            $sisaOrder = max(0, $order->total - $order->payments()->sum('amount'));
-                            return "Sisa tagihan order: Rp " . number_format($sisaOrder, 0, ',', '.');
-                        }
-                        return null;
+                        return "Sisa tagihan order: Rp " . number_format($sisaOrder, 0, ',', '.');
                     }),
                 Select::make('payment_method')
                     ->label('Metode Pembayaran')
@@ -170,7 +205,9 @@ class PaymentsRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                CreateAction::make()->label('Tambah Pembayaran'),
+                CreateAction::make()
+                    ->label('Tambah Pembayaran')
+                    ->visible(fn ($livewire) => ($livewire->getOwnerRecord()?->total - $livewire->getOwnerRecord()?->payments()->sum('amount')) > 0),
             ])
             ->recordActions([
                 \Filament\Actions\Action::make('print')

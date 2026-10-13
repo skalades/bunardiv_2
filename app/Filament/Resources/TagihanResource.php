@@ -183,8 +183,23 @@ class TagihanResource extends Resource
                         Select::make('invoice_id')
                             ->label('Invoice Terkait')
                             ->options(function (Order $record) {
-                                $record->loadMissing('invoices');
-                                if ($record->invoices->isEmpty()) {
+                                $record->loadMissing(['invoices', 'payments']);
+                                $sisaOrder = max(0, $record->total - $record->payments()->sum('amount'));
+
+                                $options = [];
+                                foreach ($record->invoices as $inv) {
+                                    $paidForInv = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
+                                    $isMainInv = ($inv->no_invoice === 'INV-' . $record->no_order);
+                                    $sisaInv = $isMainInv 
+                                        ? $sisaOrder 
+                                        : max(0, $inv->nominal_tagihan - $paidForInv);
+
+                                    if ($sisaInv > 0) {
+                                        $options[$inv->id] = "{$inv->no_invoice} - " . ($inv->judul_tagihan ?: 'Tagihan') . " (Sisa: Rp " . number_format($sisaInv, 0, ',', '.') . ")";
+                                    }
+                                }
+
+                                if (empty($options) && $sisaOrder > 0) {
                                     $mainInv = $record->invoices()->firstOrCreate(
                                         ['no_invoice' => 'INV-' . $record->no_order],
                                         [
@@ -193,33 +208,28 @@ class TagihanResource extends Resource
                                             'jatuh_tempo'     => $record->tanggal ?? now(),
                                         ]
                                     );
-                                    return [$mainInv->id => "{$mainInv->no_invoice} - {$mainInv->judul_tagihan} (Rp " . number_format($mainInv->nominal_tagihan, 0, ',', '.') . ")"];
+                                    $options[$mainInv->id] = "{$mainInv->no_invoice} - {$mainInv->judul_tagihan} (Sisa: Rp " . number_format($sisaOrder, 0, ',', '.') . ")";
                                 }
 
-                                return $record->invoices->mapWithKeys(function ($inv) {
-                                    return [$inv->id => "{$inv->no_invoice} - " . ($inv->judul_tagihan ?: 'Tagihan') . " (Rp " . number_format($inv->nominal_tagihan, 0, ',', '.') . ")"];
-                                });
+                                return $options;
                             })
                             ->default(function (Order $record) {
-                                $record->loadMissing('invoices');
-                                if ($record->invoices->isEmpty()) {
-                                    $mainInv = $record->invoices()->firstOrCreate(
-                                        ['no_invoice' => 'INV-' . $record->no_order],
-                                        [
-                                            'judul_tagihan'   => 'Tagihan Pesanan ' . $record->no_order,
-                                            'nominal_tagihan' => $record->total,
-                                            'jatuh_tempo'     => $record->tanggal ?? now(),
-                                        ]
-                                    );
-                                    return $mainInv->id;
-                                }
+                                $record->loadMissing(['invoices', 'payments']);
+                                $sisaOrder = max(0, $record->total - $record->payments()->sum('amount'));
+                                if ($sisaOrder <= 0) return null;
 
-                                $unpaidInv = $record->invoices->first(function ($inv) {
+                                $unpaidInv = $record->invoices->first(function ($inv) use ($record) {
+                                    if ($inv->no_invoice === 'INV-' . $record->no_order) return false;
                                     $paid = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
                                     return ($inv->nominal_tagihan - $paid) > 0;
                                 });
 
-                                return $unpaidInv?->id ?? $record->invoices->last()?->id;
+                                if ($unpaidInv) {
+                                    return $unpaidInv->id;
+                                }
+
+                                $mainInv = $record->invoices->firstWhere('no_invoice', 'INV-' . $record->no_order);
+                                return $mainInv?->id ?? $record->invoices->first()?->id;
                             })
                             ->live()
                             ->afterStateUpdated(function ($set, $state, Order $record) {
@@ -228,8 +238,9 @@ class TagihanResource extends Resource
                                     if ($inv) {
                                         $sisaOrder = max(0, $record->total - $record->payments()->sum('amount'));
                                         $paidForInv = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
-                                        $sisaInv = max(0, $inv->nominal_tagihan - $paidForInv);
-                                        $targetAmount = $sisaInv > 0 ? $sisaInv : $inv->nominal_tagihan;
+                                        $isMainInv = ($inv->no_invoice === 'INV-' . $record->no_order);
+                                        $sisaInv = $isMainInv ? $sisaOrder : max(0, $inv->nominal_tagihan - $paidForInv);
+                                        $targetAmount = $sisaInv > 0 ? $sisaInv : $sisaOrder;
                                         $set('amount', (int) round($sisaOrder > 0 ? min($targetAmount, $sisaOrder) : $targetAmount));
                                     }
                                 }
@@ -241,24 +252,28 @@ class TagihanResource extends Resource
                             ->currencyIdr()
                             ->required()
                             ->default(function (Order $record, $get) {
-                                $record->loadMissing('invoices');
+                                $record->loadMissing(['invoices', 'payments']);
                                 $sisaOrder = max(0, $record->total - $record->payments()->sum('amount'));
+                                if ($sisaOrder <= 0) return 0;
+
                                 $invoiceId = $get('invoice_id');
-                                if (! $invoiceId) {
-                                    $unpaidInv = $record->invoices->first(function ($inv) {
+                                $invoice = $invoiceId ? Invoice::find($invoiceId) : null;
+
+                                if (! $invoice) {
+                                    $unpaidInv = $record->invoices->first(function ($inv) use ($record) {
+                                        if ($inv->no_invoice === 'INV-' . $record->no_order) return false;
                                         $paid = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
                                         return ($inv->nominal_tagihan - $paid) > 0;
                                     });
-                                    $invoice = $unpaidInv ?? $record->invoices->last();
-                                } else {
-                                    $invoice = Invoice::find($invoiceId);
+                                    $invoice = $unpaidInv ?? $record->invoices->firstWhere('no_invoice', 'INV-' . $record->no_order);
                                 }
 
                                 if ($invoice) {
                                     $paid = \App\Models\Payment::where('invoice_id', $invoice->id)->sum('amount');
-                                    $sisaInv = max(0, $invoice->nominal_tagihan - $paid);
+                                    $isMainInv = ($invoice->no_invoice === 'INV-' . $record->no_order);
+                                    $sisaInv = $isMainInv ? $sisaOrder : max(0, $invoice->nominal_tagihan - $paid);
                                     if ($sisaInv > 0) {
-                                        return (int) round($sisaOrder > 0 ? min($sisaInv, $sisaOrder) : $sisaInv);
+                                        return (int) round(min($sisaInv, $sisaOrder));
                                     }
                                 }
 
@@ -267,13 +282,17 @@ class TagihanResource extends Resource
                             ->maxValue(fn (Order $record) => max(0, $record->total - $record->payments()->sum('amount')))
                             ->minValue(1)
                             ->helperText(function ($get, Order $record) {
+                                $sisaOrder = max(0, $record->total - $record->payments()->sum('amount'));
                                 $invoiceId = $get('invoice_id');
                                 if ($invoiceId && ($inv = Invoice::find($invoiceId))) {
                                     $paid = \App\Models\Payment::where('invoice_id', $inv->id)->sum('amount');
-                                    $sisa = max(0, $inv->nominal_tagihan - $paid);
-                                    return "Nominal invoice ini: Rp " . number_format($inv->nominal_tagihan, 0, ',', '.') . " (Sisa tagihan invoice: Rp " . number_format($sisa, 0, ',', '.') . ")";
+                                    $isMainInv = ($inv->no_invoice === 'INV-' . $record->no_order);
+                                    $sisaInv = $isMainInv ? $sisaOrder : max(0, $inv->nominal_tagihan - $paid);
+                                    if ($sisaInv <= 0) {
+                                        return "Invoice ini sudah LUNAS. (Sisa tagihan order: Rp " . number_format($sisaOrder, 0, ',', '.') . ")";
+                                    }
+                                    return "Sisa tagihan invoice ini: Rp " . number_format($sisaInv, 0, ',', '.') . " (Total order sisa: Rp " . number_format($sisaOrder, 0, ',', '.') . ")";
                                 }
-                                $sisaOrder = max(0, $record->total - $record->payments()->sum('amount'));
                                 return "Sisa tagihan order: Rp " . number_format($sisaOrder, 0, ',', '.');
                             }),
                         Select::make('payment_method')

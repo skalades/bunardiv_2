@@ -145,4 +145,64 @@ class TagihanInvoicePaymentTest extends TestCase
                 'amount'     => 1637907,
             ]);
     }
+
+    public function test_paid_invoice_is_excluded_from_payment_options(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+
+        $customer = Customer::create(['nama' => 'Test Customer 2', 'no_telepon' => '0822222', 'alamat' => 'Jogja']);
+        $order = Order::create([
+            'customer_id' => $customer->id,
+            'no_order'    => 'ORD-202610-EXCLUDE',
+            'nama_acara'  => 'Event Exclude Test',
+            'tanggal'     => '2026-10-25',
+            'total'       => 5000000,
+        ]);
+
+        // Invoice 1 (DP1): 2.500.000 - already fully paid
+        $inv1 = Invoice::create([
+            'no_invoice'      => 'INV-ORD-202610-EXCLUDE-DP1',
+            'order_id'        => $order->id,
+            'judul_tagihan'   => 'DP 1',
+            'nominal_tagihan' => 2500000,
+            'jatuh_tempo'     => '2026-10-20',
+        ]);
+        Payment::create([
+            'order_id'         => $order->id,
+            'invoice_id'       => $inv1->id,
+            'amount'           => 2500000,
+            'payment_method'   => 'Transfer BCA',
+            'payment_date'     => '2026-10-10',
+            'reference_number' => 'PAY-EXC-001',
+        ]);
+
+        // Invoice 2 (Pelunasan): 2.500.000 - UNPAID
+        $inv2 = Invoice::create([
+            'no_invoice'      => 'INV-ORD-202610-EXCLUDE-DP2',
+            'order_id'        => $order->id,
+            'judul_tagihan'   => 'Pelunasan',
+            'nominal_tagihan' => 2500000,
+            'jatuh_tempo'     => '2026-10-22',
+        ]);
+
+        Livewire::test(TagihanResource\Pages\ListTagihans::class)
+            ->mountTableAction('add_payment', $order)
+            ->assertTableActionDataSet([
+                'invoice_id' => $inv2->id,
+                'amount'     => 2500000,
+            ]);
+
+        // When order is fully paid, remaining balance is 0
+        Payment::create([
+            'order_id'         => $order->id,
+            'invoice_id'       => $inv2->id,
+            'amount'           => 2500000,
+            'payment_method'   => 'Transfer BCA',
+            'payment_date'     => '2026-10-11',
+            'reference_number' => 'PAY-EXC-002',
+        ]);
+
+        $this->assertEquals(0, max(0, $order->total - $order->fresh()->payments()->sum('amount')));
+    }
 }
