@@ -1057,6 +1057,13 @@
 
                     <!-- Modal Footer Actions -->
                     <div class="cal-modal-footer">
+                        <button type="button" 
+                            wire:click="deleteOrder({{ $order->id }})" 
+                            wire:confirm="Apakah Anda yakin ingin menghapus pesanan {{ $order->no_order }}? Semua rincian item, invoice, dan riwayat pembayaran terkait akan dihapus secara permanen."
+                            class="cal-btn-pill" 
+                            style="background: #fef2f2; color: #dc2626; border-color: #fecaca; margin-right: auto; cursor: pointer;">
+                            <i class="ph ph-trash"></i> Hapus Pesanan
+                        </button>
                         <a href="/orders/{{ $order->id }}/invoice" target="_blank" class="cal-btn-pill">
                             <i class="ph ph-receipt"></i> Cetak Invoice
                         </a>

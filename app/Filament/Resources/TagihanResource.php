@@ -293,6 +293,10 @@ class TagihanResource extends Resource
                             ->send();
                     })
                     ->visible(fn (Order $record) => ($record->total - $record->payments()->sum('amount')) > 0),
+                \Filament\Actions\DeleteAction::make()
+                    ->label('Hapus')
+                    ->modalHeading(fn (Order $record) => "Hapus Pesanan {$record->no_order}")
+                    ->modalDescription('Apakah Anda yakin ingin menghapus pesanan ini beserta seluruh tagihannya? Semua rincian invoice dan pembayaran terkait akan dihapus secara permanen.'),
             ]);
     }
 

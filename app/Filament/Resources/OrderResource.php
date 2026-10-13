@@ -299,6 +299,10 @@ class OrderResource extends Resource
                     ->openUrlInNewTab(),
                 \Filament\Actions\ViewAction::make()->label('Detail'),
                 \Filament\Actions\EditAction::make(),
+                \Filament\Actions\DeleteAction::make()
+                    ->label('Hapus')
+                    ->modalHeading(fn (\App\Models\Order $record) => "Hapus Pesanan {$record->no_order}")
+                    ->modalDescription('Apakah Anda yakin ingin menghapus pesanan ini? Semua rincian item, invoice, dan riwayat pembayaran terkait akan dihapus secara permanen.'),
             ])
             ->bulkActions([
                 \Filament\Actions\BulkActionGroup::make([

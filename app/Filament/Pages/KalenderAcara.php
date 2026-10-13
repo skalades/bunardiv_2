@@ -126,6 +126,20 @@ class KalenderAcara extends Page
         $this->selectedOrderId = null;
     }
 
+    public function deleteOrder(int $orderId): void
+    {
+        $order = Order::find($orderId);
+        if ($order) {
+            $noOrder = $order->no_order;
+            $order->delete();
+            $this->closeModal();
+            \Filament\Notifications\Notification::make()
+                ->title("Pesanan {$noOrder} berhasil dihapus")
+                ->success()
+                ->send();
+        }
+    }
+
     public function getIndonesianMonthNameProperty(): string
     {
         $months = [

@@ -11,6 +11,18 @@ class Order extends Model
         'venue', 'catatan_khusus', 'subtotal', 'diskon', 'biaya_tambahan', 'total', 'status'
     ];
 
+    protected static function booted(): void
+    {
+        static::deleting(function (Order $order) {
+            $order->items()->delete();
+            $order->payments()->delete();
+            $order->invoices()->delete();
+            foreach ($order->workOrders as $workOrder) {
+                $workOrder->delete();
+            }
+        });
+    }
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);

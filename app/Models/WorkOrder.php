@@ -35,6 +35,11 @@ class WorkOrder extends Model
                 $workOrder->surat_jalan_number = 'SJ-' . now()->format('Ymd') . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
             }
         });
+
+        static::deleting(function ($workOrder) {
+            $workOrder->equipment()->delete();
+            $workOrder->users()->delete();
+        });
     }
 
     public function order(): BelongsTo
