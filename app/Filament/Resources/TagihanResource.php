@@ -79,7 +79,7 @@ class TagihanResource extends Resource
             ])
             ->actions([
                 \Filament\Actions\Action::make('custom_invoice')
-                    ->label('Invoice Custom (DP)')
+                    ->label('Invoice Custom')
                     ->icon('heroicon-o-document-currency-dollar')
                     ->color('warning')
                     ->form([
