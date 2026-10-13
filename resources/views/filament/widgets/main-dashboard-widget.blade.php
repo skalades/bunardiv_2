@@ -207,35 +207,97 @@
 
         <!-- Bottom Section -->
         <div class="c-grid-bottom">
-            <!-- Jadwal Hari Ini -->
+            <!-- Jadwal 7 Hari Mendatang -->
             <div class="c-card">
-                <div class="c-card-header-icon" style="margin-bottom: 8px;">
-                    <div class="title" style="font-size: 14px;">
-                        <i class="ph ph-calendar-blank" style="vertical-align: middle; margin-right: 6px;"></i> 
-                        Jadwal Hari Ini
+                <div class="c-card-header-icon" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="title" style="font-size: 14px; font-weight: 600;">
+                            <i class="ph ph-calendar-blank" style="vertical-align: middle; margin-right: 6px; color: var(--accent-gold);"></i> 
+                            {{ $scheduleFilter === 'today' ? 'Jadwal Hari Ini' : 'Jadwal 7 Hari Mendatang' }}
+                        </div>
+                        <span class="c-badge dp" style="font-size: 10px; padding: 2px 7px;">
+                            {{ $this->upcoming_orders->count() }} Acara
+                        </span>
                     </div>
-                    <a href="{{ url('/admin/kalender-acara') }}" style="font-size: 11px; color: var(--accent-gold); text-decoration: none; font-weight: 500;">
-                        Kalender Lengkap &rarr;
-                    </a>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="display: inline-flex; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 2px; font-size: 11px;">
+                            <button type="button" 
+                                wire:click="setScheduleFilter('7_days')"
+                                style="border: none; background: {{ $scheduleFilter === '7_days' ? 'var(--accent-gold)' : 'transparent' }}; color: {{ $scheduleFilter === '7_days' ? '#000' : '#9ca3af' }}; padding: 3px 8px; border-radius: 4px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                7 Hari
+                            </button>
+                            <button type="button" 
+                                wire:click="setScheduleFilter('today')"
+                                style="border: none; background: {{ $scheduleFilter === 'today' ? 'var(--accent-gold)' : 'transparent' }}; color: {{ $scheduleFilter === 'today' ? '#000' : '#9ca3af' }}; padding: 3px 8px; border-radius: 4px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                Hari Ini
+                            </button>
+                        </div>
+                        <a href="{{ url('/kalender') }}" style="font-size: 11px; color: var(--accent-gold); text-decoration: none; font-weight: 500;">
+                            Kalender Lengkap &rarr;
+                        </a>
+                    </div>
                 </div>
-                @if($this->today_orders->count() > 0)
-                    <div class="c-orders-list" style="margin-top: 8px;">
-                        @foreach($this->today_orders as $tOrder)
-                            <a href="{{ url('/admin/orders/' . $tOrder->id) }}" style="text-decoration: none; color: inherit;">
-                                <div class="c-order-item" style="padding: 10px 14px;">
-                                    <div class="c-order-info">
-                                        <h4>{{ $tOrder->nama_acara }} <span>{{ $tOrder->no_order }}</span></h4>
-                                        <p>{{ $tOrder->jam ? substr($tOrder->jam, 0, 5) . ' WIB' : 'Waktu TBA' }} &bull; {{ $tOrder->venue ?? 'Venue belum diisi' }}</p>
+
+                @if($this->upcoming_orders->count() > 0)
+                    <div class="c-orders-list" style="margin-top: 8px; max-height: 380px; overflow-y: auto;">
+                        @foreach($this->upcoming_orders as $tOrder)
+                            @php
+                                $eventDate = \Carbon\Carbon::parse($tOrder->tanggal);
+                                $isToday = $eventDate->isToday();
+                                $isTomorrow = $eventDate->isTomorrow();
+                                $badgeClass = match($tOrder->status) {
+                                    'selesai' => 'selesai',
+                                    'dp dibayar' => 'dp',
+                                    'proses' => 'proses',
+                                    'dibatalkan' => 'batal',
+                                    default => 'masuk',
+                                };
+                            @endphp
+                            <a href="{{ url('/orders/' . $tOrder->id) }}" style="text-decoration: none; color: inherit;">
+                                <div class="c-order-item" style="padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                                    <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+                                        <!-- Date Badge -->
+                                        <div style="min-width: 54px; text-align: center; padding: 4px 6px; border-radius: 6px; background: {{ $isToday ? 'rgba(207, 162, 75, 0.2)' : ($isTomorrow ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 255, 255, 0.05)') }}; border: 1px solid {{ $isToday ? 'rgba(207, 162, 75, 0.4)' : ($isTomorrow ? 'rgba(56, 189, 248, 0.3)' : 'rgba(255, 255, 255, 0.1)') }};">
+                                            @if($isToday)
+                                                <div style="font-size: 9px; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">HARI INI</div>
+                                                <div style="font-size: 13px; font-weight: 700; color: #fff;">{{ $eventDate->format('d M') }}</div>
+                                            @elseif($isTomorrow)
+                                                <div style="font-size: 9px; font-weight: 700; color: #38bdf8; text-transform: uppercase;">BESOK</div>
+                                                <div style="font-size: 13px; font-weight: 700; color: #fff;">{{ $eventDate->format('d M') }}</div>
+                                            @else
+                                                <div style="font-size: 9px; font-weight: 600; color: #9ca3af; text-transform: uppercase;">{{ $eventDate->translatedFormat('D') }}</div>
+                                                <div style="font-size: 13px; font-weight: 700; color: #fff;">{{ $eventDate->format('d M') }}</div>
+                                            @endif
+                                        </div>
+
+                                        <div class="c-order-info" style="min-width: 0; flex: 1;">
+                                            <h4 style="margin: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                {{ $tOrder->nama_acara }} 
+                                                <span style="font-size: 11px; opacity: 0.7;">{{ $tOrder->no_order }}</span>
+                                            </h4>
+                                            <p style="margin: 3px 0 0 0; font-size: 11px; color: var(--text-secondary, #9ca3af); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                <i class="ph ph-clock" style="vertical-align: middle;"></i> {{ $tOrder->jam ? substr($tOrder->jam, 0, 5) . ' WIB' : 'Waktu TBA' }}
+                                                &bull; <i class="ph ph-map-pin" style="vertical-align: middle;"></i> {{ $tOrder->venue ?? 'Venue belum diisi' }}
+                                                @if($tOrder->customer)
+                                                    &bull; <i class="ph ph-user" style="vertical-align: middle;"></i> {{ $tOrder->customer->nama }}
+                                                @endif
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div class="c-badge masuk" style="font-size: 9px;">{{ strtoupper($tOrder->status) }}</div>
+                                    <div class="c-badge {{ $badgeClass }}" style="font-size: 9px; white-space: nowrap;">
+                                        {{ strtoupper($tOrder->status) }}
+                                    </div>
                                 </div>
                             </a>
                         @endforeach
                     </div>
                 @else
-                    <div class="c-schedule-empty" style="flex-direction: column; gap: 8px;">
-                        <div>Tidak ada acara hari ini.</div>
-                        <a href="{{ url('/admin/kalender-acara') }}" class="c-badge dp" style="text-decoration: none; padding: 6px 12px;">
+                    <div class="c-schedule-empty" style="flex-direction: column; gap: 8px; padding: 28px 16px;">
+                        <i class="ph ph-calendar-x" style="font-size: 28px; color: #6b7280;"></i>
+                        <div style="color: #9ca3af; font-size: 13px;">
+                            Tidak ada jadwal acara dalam {{ $scheduleFilter === 'today' ? 'hari ini' : '7 hari mendatang' }}.
+                        </div>
+                        <a href="{{ url('/kalender') }}" class="c-badge dp" style="text-decoration: none; padding: 6px 14px; font-size: 11px;">
                             Buka Kalender Jadwal
                         </a>
                     </div>
@@ -249,7 +311,7 @@
                         <i class="ph ph-package" style="vertical-align: middle; margin-right: 6px;"></i> 
                         Pesanan Terbaru
                     </div>
-                    <a href="{{ url('/admin/orders') }}" style="font-size: 11px; color: var(--accent-gold); text-decoration: none; font-weight: 500;">
+                    <a href="{{ url('/orders') }}" style="font-size: 11px; color: var(--accent-gold); text-decoration: none; font-weight: 500;">
                         Lihat Semua &rarr;
                     </a>
                 </div>
@@ -267,7 +329,7 @@
                             $clientDisplay = $rOrder->customer->nama ?? ($rOrder->nama_acara ?? 'Pelanggan');
                             $dateDisplay = $rOrder->tanggal ? \Carbon\Carbon::parse($rOrder->tanggal)->translatedFormat('d M Y') : '-';
                         @endphp
-                        <a href="{{ url('/admin/orders/' . $rOrder->id) }}" style="text-decoration: none; color: inherit;">
+                        <a href="{{ url('/orders/' . $rOrder->id) }}" style="text-decoration: none; color: inherit;">
                             <div class="c-order-item">
                                 <div class="c-order-info">
                                     <h4>{{ $rOrder->nama_acara }} <span>{{ $rOrder->no_order }}</span></h4>

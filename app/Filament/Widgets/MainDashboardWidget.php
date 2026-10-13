@@ -16,6 +16,15 @@ class MainDashboardWidget extends Widget
     protected string $view = 'filament.widgets.main-dashboard-widget';
     protected int | string | array $columnSpan = 'full';
 
+    public string $scheduleFilter = '7_days'; // '7_days' or 'today'
+
+    public function setScheduleFilter(string $filter): void
+    {
+        if (in_array($filter, ['7_days', 'today'])) {
+            $this->scheduleFilter = $filter;
+        }
+    }
+
     public static function canView(): bool
     {
         return auth()->user()?->role === 'admin';
@@ -105,6 +114,9 @@ class MainDashboardWidget extends Widget
             'totalCrew'              => $totalCrew,
             'crewHadir'              => $crewHadir,
             'crewBelum'              => $crewBelum,
+            'upcomingOrdersCount'    => Order::whereBetween('tanggal', [Carbon::today()->toDateString(), Carbon::today()->addDays(7)->toDateString()])
+                ->where('status', '!=', 'dibatalkan')
+                ->count(),
         ];
     }
 
@@ -112,6 +124,23 @@ class MainDashboardWidget extends Widget
     {
         return Order::with('customer')
             ->whereDate('tanggal', Carbon::today())
+            ->where('status', '!=', 'dibatalkan')
+            ->orderBy('jam', 'asc')
+            ->get();
+    }
+
+    public function getUpcomingOrdersProperty()
+    {
+        $today = Carbon::today();
+
+        if ($this->scheduleFilter === 'today') {
+            return $this->today_orders;
+        }
+
+        return Order::with('customer')
+            ->whereBetween('tanggal', [$today->toDateString(), $today->copy()->addDays(7)->toDateString()])
+            ->where('status', '!=', 'dibatalkan')
+            ->orderBy('tanggal', 'asc')
             ->orderBy('jam', 'asc')
             ->get();
     }
