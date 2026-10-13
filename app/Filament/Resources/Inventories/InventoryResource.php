@@ -25,6 +25,21 @@ class InventoryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    public static function getNavigationGroup(): ?string
+    {
+        return 'LOGISTICS & OPERATIONS';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Inventaris Alat';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 1;
+    }
+
     protected static ?string $recordTitleAttribute = 'nama';
 
     public static function form(Schema $schema): Schema

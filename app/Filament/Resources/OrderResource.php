@@ -48,6 +48,11 @@ class OrderResource extends Resource
         return 'Pesanan';
     }
 
+    public static function getNavigationSort(): ?int
+    {
+        return 2;
+    }
+
     public static function getPluralModelLabel(): string
     {
         return 'Pesanan';

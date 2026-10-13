@@ -47,6 +47,11 @@ class KaryawanResource extends Resource
         return 'Karyawan';
     }
 
+    public static function getNavigationSort(): ?int
+    {
+        return 3;
+    }
+
     public static function getPluralModelLabel(): string
     {
         return 'Karyawan';

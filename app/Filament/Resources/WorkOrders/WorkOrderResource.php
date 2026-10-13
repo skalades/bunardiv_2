@@ -25,12 +25,17 @@ class WorkOrderResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Logistics & Operations';
+        return 'LOGISTICS & OPERATIONS';
     }
 
     public static function getNavigationLabel(): string
     {
         return 'Persiapan & SPK';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 2;
     }
 
     public static function getPluralModelLabel(): string

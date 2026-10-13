@@ -48,6 +48,11 @@ class TagihanResource extends Resource
         return 'KEUANGAN';
     }
 
+    public static function getNavigationSort(): ?int
+    {
+        return 2;
+    }
+
     public static function table(Table $table): Table
     {
         return $table

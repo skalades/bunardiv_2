@@ -37,7 +37,11 @@ class Settings extends Page implements HasForms
     {
         return 'Pengaturan Sistem';
     }
-    protected static ?int $navigationSort = 100;
+
+    public static function getNavigationSort(): ?int
+    {
+        return 1;
+    }
 
     protected string $view = 'filament.pages.settings';
 

@@ -25,6 +25,21 @@ class InventoryTransactionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    public static function getNavigationGroup(): ?string
+    {
+        return 'LOGISTICS & OPERATIONS';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Transaksi Stok';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 3;
+    }
+
     protected static ?string $recordTitleAttribute = 'id';
 
     public static function form(Schema $schema): Schema

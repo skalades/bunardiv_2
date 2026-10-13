@@ -47,6 +47,11 @@ class PengeluaranResource extends Resource
         return 'Pengeluaran';
     }
 
+    public static function getNavigationSort(): ?int
+    {
+        return 1;
+    }
+
     public static function getPluralModelLabel(): string
     {
         return 'Pengeluaran';

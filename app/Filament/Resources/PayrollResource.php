@@ -44,6 +44,11 @@ class PayrollResource extends Resource
         return 'Penggajian (Payroll)';
     }
 
+    public static function getNavigationSort(): ?int
+    {
+        return 5;
+    }
+
     public static function getPluralModelLabel(): string
     {
         return 'Payroll';

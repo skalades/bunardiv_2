@@ -43,6 +43,11 @@ class ProductResource extends Resource
         return 'Menu & Paket POS';
     }
 
+    public static function getNavigationSort(): ?int
+    {
+        return 1;
+    }
+
     public static function getPluralModelLabel(): string
     {
         return 'Menu & Paket Layanan';

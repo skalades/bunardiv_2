@@ -45,6 +45,11 @@ class AbsensiResource extends Resource
         return 'Absensi';
     }
 
+    public static function getNavigationSort(): ?int
+    {
+        return 1;
+    }
+
     public static function getPluralModelLabel(): string
     {
         return 'Absensi Karyawan';

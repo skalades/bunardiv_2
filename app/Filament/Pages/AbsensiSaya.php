@@ -28,7 +28,7 @@ class AbsensiSaya extends Page
 
     public static function getNavigationSort(): ?int
     {
-        return 0; // Tampil paling atas di grup SDM
+        return 2;
     }
 
     public function getTitle(): string

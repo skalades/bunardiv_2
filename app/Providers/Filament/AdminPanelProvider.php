@@ -42,6 +42,15 @@ class AdminPanelProvider extends PanelProvider
             ->maxContentWidth(Width::Full)
             ->sidebarWidth('17rem')
             ->sidebarCollapsibleOnDesktop()
+            ->navigationGroups([
+                'KEUANGAN',
+                'LAPORAN',
+                'LOGISTICS & OPERATIONS',
+                'MANAJEMEN ORDER',
+                'OPERASIONAL',
+                'PENGATURAN',
+                'SDM & PENGGAJIAN',
+            ])
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn () => view('filament.custom-styles'),

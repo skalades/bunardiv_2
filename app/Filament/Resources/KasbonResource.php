@@ -47,6 +47,11 @@ class KasbonResource extends Resource
         return 'Kasbon & Piutang';
     }
 
+    public static function getNavigationSort(): ?int
+    {
+        return 4;
+    }
+
     public static function getPluralModelLabel(): string
     {
         return 'Kasbon Karyawan';
