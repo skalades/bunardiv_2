@@ -123,6 +123,17 @@ class OrderResource extends Resource
                             ]),
                         TextInput::make('venue')
                             ->label('Venue'),
+                        Select::make('status')
+                            ->label('Status Pesanan')
+                            ->options([
+                                'pesanan masuk' => 'Pesanan Masuk',
+                                'dp dibayar'    => 'DP Dibayar',
+                                'proses'        => 'Dalam Proses',
+                                'selesai'       => 'Selesai',
+                                'dibatalkan'    => 'Dibatalkan',
+                            ])
+                            ->default('pesanan masuk')
+                            ->required(),
                         Textarea::make('catatan_khusus')
                             ->label('Catatan Khusus'),
 
@@ -172,7 +183,9 @@ class OrderResource extends Resource
                             ->color(fn (string $state): string => match ($state) {
                                 'pesanan masuk' => 'gray',
                                 'dp dibayar' => 'warning',
+                                'proses' => 'info',
                                 'selesai' => 'success',
+                                'dibatalkan' => 'danger',
                                 default => 'primary',
                             }),
                     ])->columns(2),
@@ -231,11 +244,53 @@ class OrderResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'pesanan masuk' => 'gray',
                         'dp dibayar' => 'warning',
+                        'proses' => 'info',
                         'selesai' => 'success',
+                        'dibatalkan' => 'danger',
                         default => 'primary',
                     }),
             ])
+            ->filters([
+                \Filament\Tables\Filters\SelectFilter::make('status')
+                    ->label('Filter Status')
+                    ->options([
+                        'pesanan masuk' => 'Pesanan Masuk',
+                        'dp dibayar'    => 'DP Dibayar',
+                        'proses'        => 'Dalam Proses',
+                        'selesai'       => 'Selesai',
+                        'dibatalkan'    => 'Dibatalkan',
+                    ]),
+            ])
             ->actions([
+                \Filament\Actions\Action::make('ubah_status')
+                    ->label('Ubah Status')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('info')
+                    ->modalHeading(fn (\App\Models\Order $record) => "Ubah Status: {$record->no_order}")
+                    ->modalWidth('md')
+                    ->form([
+                        Select::make('status')
+                            ->label('Status Pesanan')
+                            ->options([
+                                'pesanan masuk' => 'Pesanan Masuk',
+                                'dp dibayar'    => 'DP Dibayar',
+                                'proses'        => 'Dalam Proses',
+                                'selesai'       => 'Selesai',
+                                'dibatalkan'    => 'Dibatalkan',
+                            ])
+                            ->required(),
+                    ])
+                    ->fillForm(fn (\App\Models\Order $record): array => [
+                        'status' => $record->status,
+                    ])
+                    ->action(function (\App\Models\Order $record, array $data): void {
+                        $record->update(['status' => $data['status']]);
+                        \Filament\Notifications\Notification::make()
+                            ->title('Status pesanan berhasil diperbarui')
+                            ->body("Status pesanan {$record->no_order} diubah menjadi: " . ucfirst($data['status']))
+                            ->success()
+                            ->send();
+                    }),
                 \Filament\Actions\Action::make('print_invoice')
                     ->label('Cetak Invoice')
                     ->icon('heroicon-o-document-arrow-down')
