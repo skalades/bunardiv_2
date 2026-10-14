@@ -399,9 +399,9 @@
 
         // Company branding & settings
         $setting = $setting ?? \App\Models\Setting::getSettings();
-        $companyName = $setting->company_name ?: 'N7 DECORATION & CATERING BU NARDI';
-        $companyAddress = $setting->company_address ?: 'Basecamp Logistik & Dapur Utama, Jakarta Barat';
-        $companyPhone = $setting->company_phone ?: '0812-8899-7700';
+        $companyName = $setting->company_name ?: 'IBU NARDI';
+        $companyAddress = $setting->company_address ?: 'Jl. Patrakomala No.7, Jayaraga, Tarogong Kidul, Garut';
+        $companyPhone = $setting->company_phone ?: '0852-8844-2884';
         $companyEmail = $setting->company_email ?: 'operasional@n7bunardi.com';
         $companyLogoPath = $setting->getLogoPath();
         $bankAccounts = $setting->getFormattedBankAccounts();
@@ -425,24 +425,18 @@
         }
     </script>
 
-    <!-- HEADER -->
-    <table class="header-table">
+    <!-- KOP SURAT RESMI -->
+    @include('pdf.partials.kop', ['setting' => $setting])
+
+    <!-- DOCUMENT TITLE BAR -->
+    <table class="doc-title-bar" style="width: 100%; margin-bottom: 12px; border-collapse: collapse;">
         <tr>
-            <td class="header-left">
-                @if($companyLogoPath && file_exists($companyLogoPath))
-                    <img src="{{ $companyLogoPath }}" alt="Logo" class="company-logo"><br>
-                @endif
-                <div class="company-name">{{ $companyName }}</div>
-                <div class="company-desc">Professional Catering & Event Management</div>
-                <div class="company-details">
-                    {{ $companyAddress }}<br>
-                    Telp / WA: {{ $companyPhone }} | Email: {{ $companyEmail }}
-                </div>
+            <td style="vertical-align: middle; text-align: left; border: none; padding: 0;">
+                <div class="inv-badge-title" style="margin-bottom: 2px;">INVOICE</div>
+                <div class="inv-number" style="margin-bottom: 0;">No. {{ $order->no_order }}</div>
             </td>
-            <td class="header-right">
-                <div class="inv-badge-title">INVOICE</div>
-                <div class="inv-number">No. {{ $order->no_order }}</div>
-                <div><span class="badge {{ $statusClass }}">{{ $statusLabel }}</span></div>
+            <td style="vertical-align: middle; text-align: right; border: none; padding: 0;">
+                <span class="badge {{ $statusClass }}">{{ $statusLabel }}</span>
             </td>
         </tr>
     </table>
@@ -530,7 +524,7 @@
                             <span class="item-cat">{{ $item->product->kategori }}</span>
                         @endif
                     </div>
-                    @if($item->catatan)
+                    @if(!empty($item->catatan))
                         <div class="item-note">Catatan: {{ $item->catatan }}</div>
                     @endif
                 </td>
@@ -570,6 +564,13 @@
                         @endif
                     </div>
                 </div>
+
+                @if(!empty($order->catatan_khusus))
+                <div class="box-panel">
+                    <div class="box-title">Catatan Khusus Pesanan:</div>
+                    <div class="terms-text">{{ $order->catatan_khusus }}</div>
+                </div>
+                @endif
 
                 @if($order->payments && $order->payments->count() > 0)
                 <div class="box-panel">

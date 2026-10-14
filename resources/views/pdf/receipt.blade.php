@@ -50,9 +50,9 @@
     @php
         $setting = $setting ?? \App\Models\Setting::getSettings();
         $logoPath = $setting->getLogoPath();
-        $companyName = $setting->company_name ?: 'N7 DECORATION & CATERING BU NARDI';
-        $companyAddress = $setting->company_address ?: 'Basecamp Logistik & Dapur Utama, Jakarta Barat';
-        $companyPhone = $setting->company_phone ?: '0812-8899-7700';
+        $companyName = $setting->company_name ?: 'IBU NARDI';
+        $companyAddress = $setting->company_address ?: 'Jl. Patrakomala No.7, Jayaraga, Tarogong Kidul, Garut';
+        $companyPhone = $setting->company_phone ?: '0852-8844-2884';
         $companyEmail = $setting->company_email ?: 'operasional@n7bunardi.com';
         $bankAccounts = $setting->getFormattedBankAccounts();
     @endphp
@@ -60,25 +60,8 @@
     <div class="receipt-container">
         <div class="watermark">LUNAS</div>
         
-        <table class="header-table">
-            <tr>
-                <td class="header-logo">
-                    @if($logoPath && file_exists($logoPath))
-                        <img src="{{ $logoPath }}" alt="Logo">
-                    @else
-                        <div class="emblem-box">N7</div>
-                    @endif
-                </td>
-                <td class="header-info">
-                    <div class="company-name">{{ $companyName }}</div>
-                    <div class="company-contact">
-                        {{ $companyAddress }}<br>
-                        Telp/WA: {{ $companyPhone }} 
-                        @if($companyEmail) | Email: {{ $companyEmail }} @endif
-                    </div>
-                </td>
-            </tr>
-        </table>
+        <!-- KOP SURAT RESMI -->
+        @include('pdf.partials.kop', ['setting' => $setting, 'dividerColor' => '#2980b9'])
 
         <div class="doc-title-container">
             <div class="doc-title">KWITANSI PEMBAYARAN</div>

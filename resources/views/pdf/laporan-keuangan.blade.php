@@ -698,19 +698,19 @@
     <!-- KOP RESMI PERUSAHAAN -->
     <table class="kop-table">
         <tr>
-            <td class="kop-emblem-cell">
-                @if(!empty($companyLogoPath))
-                    <img src="{{ $companyLogoPath }}" alt="Logo" class="company-logo-img">
+            <td class="kop-emblem-cell" style="width: 58px; vertical-align: middle; padding-right: 12px; border: none;">
+                @if(!empty($companyLogoPath) && file_exists($companyLogoPath))
+                    <img src="{{ $companyLogoPath }}" alt="Logo" class="company-logo-img" style="height: 52px; max-width: 58px; object-fit: contain;">
                 @else
                     <div class="brand-emblem">N7</div>
                 @endif
             </td>
-            <td>
-                <div class="kop-brand-title">{{ $setting->company_name ?? 'N7 DECORATION & CATERING BU NARDI' }}</div>
-                <div class="kop-tagline">Jasa Katering Prasmanan, Paket Pernikahan &amp; Dekorasi Acara</div>
+            <td style="vertical-align: middle; border: none;">
+                <div class="kop-brand-title">{{ $setting->company_name ?? 'IBU NARDI' }}</div>
+                <div class="kop-tagline" style="font-size: 11px; font-weight: 700; color: #334155; text-transform: none; margin-top: 1px; margin-bottom: 2px;">Catering &amp; N7 Decoration</div>
                 <div class="kop-info">
-                    {{ $setting->company_address ?? 'Basecamp Logistik & Dapur Utama, Jakarta Barat' }}<br>
-                    Telp/WA: {{ $setting->company_phone ?? '0812-8899-7700' }} &bull; {{ $setting->company_email ?? 'operasional@n7bunardi.com' }}
+                    Alamat : {{ $setting->company_address ?? 'Jl. Patrakomala No.7, Jayaraga, Tarogong Kidul, Garut' }}<br>
+                    WhatsApp : {{ $setting->company_phone ?? '0852-8844-2884' }} &bull; Instagram &amp; TikTok : @n7cateringbunardi
                 </div>
             </td>
             <td class="kop-doc-meta">
@@ -995,7 +995,7 @@
     <table class="running-header">
         <tr>
             <td>
-                <div class="rh-left-brand">{{ $setting->company_name ?? 'N7 DECORATION & CATERING BU NARDI' }}</div>
+                <div class="rh-left-brand">{{ $setting->company_name ?? 'IBU NARDI' }}</div>
                 <div class="rh-left-sub">Analisis Beban Operasional &amp; Matriks Kinerja Periode</div>
             </td>
             <td class="rh-right-meta">
@@ -1232,7 +1232,7 @@
     <table class="running-header">
         <tr>
             <td>
-                <div class="rh-left-brand">{{ $setting->company_name ?? 'N7 DECORATION & CATERING BU NARDI' }}</div>
+                <div class="rh-left-brand">{{ $setting->company_name ?? 'IBU NARDI' }}</div>
                 <div class="rh-left-sub">Portofolio Pesanan Acara, Pengendalian Piutang &amp; Lembar Pengesahan</div>
             </td>
             <td class="rh-right-meta">

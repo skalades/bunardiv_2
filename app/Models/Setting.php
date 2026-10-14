@@ -21,9 +21,9 @@ class Setting extends Model
     public static function getSettings(): self
     {
         return static::first() ?? new static([
-            'company_name' => 'N7 DECORATION & CATERING BU NARDI',
-            'company_address' => 'Basecamp Logistik & Dapur Utama, Jakarta Barat',
-            'company_phone' => '0812-8899-7700',
+            'company_name' => 'IBU NARDI',
+            'company_address' => 'Jl. Patrakomala No.7, Jayaraga, Tarogong Kidul, Garut',
+            'company_phone' => '0852-8844-2884',
             'company_email' => 'operasional@n7bunardi.com',
             'bank_accounts' => [
                 ['bank_name' => 'BCA', 'account_number' => '5420-9988-77', 'account_name' => 'BU NARDI CATERING'],
@@ -38,31 +38,46 @@ class Setting extends Model
      */
     public function getLogoPath(): ?string
     {
-        if (empty($this->company_logo)) {
-            return null;
+        if (! empty($this->company_logo)) {
+            $cleanPath = ltrim($this->company_logo, '/\\');
+            $withoutStorage = preg_replace('/^storage[\/\\\\]/', '', $cleanPath);
+            $publicDiskPath = null;
+            try {
+                $publicDiskPath = Storage::disk('public')->path($withoutStorage);
+            } catch (\Throwable $e) {
+            }
+
+            $candidates = array_filter(array_unique([
+                $publicDiskPath,
+                storage_path('app/public/'.$withoutStorage),
+                public_path('storage/'.$withoutStorage),
+                storage_path('app/public/'.$cleanPath),
+                public_path($cleanPath),
+                storage_path('app/private/'.$withoutStorage),
+                storage_path('app/private/'.$cleanPath),
+                public_path('storage/'.$cleanPath),
+            ]));
+
+            foreach ($candidates as $candidate) {
+                if ($candidate && file_exists($candidate)) {
+                    return $candidate;
+                }
+            }
         }
 
-        $cleanPath = ltrim($this->company_logo, '/\\');
-        $withoutStorage = preg_replace('/^storage[\/\\\\]/', '', $cleanPath);
-        $publicDiskPath = null;
-        try {
-            $publicDiskPath = Storage::disk('public')->path($withoutStorage);
-        } catch (\Throwable $e) {
-        }
+        // Fallback default Logo.png
+        $defaultCandidates = [
+            public_path('images/logo.png'),
+            public_path('Logo.png'),
+            public_path('logo.png'),
+            storage_path('app/public/logos/Logo.png'),
+            storage_path('app/public/logos/logo.png'),
+            public_path('storage/logos/Logo.png'),
+            public_path('storage/logos/logo.png'),
+        ];
 
-        $candidates = array_filter(array_unique([
-            $publicDiskPath,
-            storage_path('app/public/'.$withoutStorage),
-            public_path('storage/'.$withoutStorage),
-            storage_path('app/public/'.$cleanPath),
-            public_path($cleanPath),
-            storage_path('app/private/'.$withoutStorage),
-            storage_path('app/private/'.$cleanPath),
-            public_path('storage/'.$cleanPath),
-        ]));
-
-        foreach ($candidates as $candidate) {
-            if ($candidate && file_exists($candidate)) {
+        foreach ($defaultCandidates as $candidate) {
+            if (file_exists($candidate)) {
                 return $candidate;
             }
         }

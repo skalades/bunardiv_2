@@ -170,9 +170,9 @@
     @php
         $setting = $setting ?? \App\Models\Setting::getSettings();
         $logoPath = $setting->getLogoPath();
-        $companyName = $setting->company_name ?: 'N7 DECORATION & CATERING BU NARDI';
-        $companyAddress = $setting->company_address ?: 'Basecamp Logistik & Dapur Utama, Jakarta Barat';
-        $companyPhone = $setting->company_phone ?: '0812-8899-7700';
+        $companyName = $setting->company_name ?: 'IBU NARDI';
+        $companyAddress = $setting->company_address ?: 'Jl. Patrakomala No.7, Jayaraga, Tarogong Kidul, Garut';
+        $companyPhone = $setting->company_phone ?: '0852-8844-2884';
         $companyEmail = $setting->company_email ?: 'operasional@n7bunardi.com';
         $bankAccounts = $setting->getFormattedBankAccounts();
         $primaryBank = !empty($bankAccounts) ? $bankAccounts[0] : null;
@@ -181,31 +181,32 @@
     <div class="container">
         <table class="header-table">
             <tr>
-                <td style="width: 58%; vertical-align: middle;">
-                    @if($logoPath && file_exists($logoPath))
-                        <table style="border: none; width: 100%;">
-                            <tr>
-                                <td style="width: 55px; vertical-align: middle; border: none; padding: 0;">
-                                    <img src="{{ $logoPath }}" alt="Logo" style="max-height: 45px; max-width: 50px; object-fit: contain;">
-                                </td>
-                                <td style="vertical-align: middle; border: none; padding-left: 8px;">
-                                    <div class="company-name">{{ $companyName }}</div>
-                                    <div class="company-contact">
-                                        {{ $companyAddress }}<br>
-                                        Telp/WA: {{ $companyPhone }} @if($companyEmail)| Email: {{ $companyEmail }}@endif
-                                    </div>
-                                </td>
-                            </tr>
-                        </table>
-                    @else
-                        <div class="company-name">{{ $companyName }}</div>
-                        <div class="company-contact">
-                            {{ $companyAddress }}<br>
-                            Telp/WA: {{ $companyPhone }} @if($companyEmail)| Email: {{ $companyEmail }}@endif
-                        </div>
-                    @endif
+                <td style="width: 65%; vertical-align: middle; border: none; padding: 0;">
+                    <table style="border: none; width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="width: 58px; vertical-align: middle; border: none; padding: 0 10px 0 0;">
+                                @if($logoPath && file_exists($logoPath))
+                                    <img src="{{ $logoPath }}" alt="Logo" style="height: 52px; max-width: 58px; object-fit: contain;">
+                                @endif
+                            </td>
+                            <td style="vertical-align: middle; border: none; padding: 0;">
+                                <div style="font-size: 15px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.15; margin-bottom: 1px;">
+                                    {{ $companyName }}
+                                </div>
+                                <div style="font-size: 11px; font-weight: 700; color: #334155; line-height: 1.2; margin-bottom: 2px;">
+                                    Catering &amp; N7 Decoration
+                                </div>
+                                <div style="font-size: 8px; color: #475569; line-height: 1.3;">
+                                    Alamat : {{ $companyAddress }}
+                                </div>
+                                <div style="font-size: 8px; color: #475569; line-height: 1.3;">
+                                    WhatsApp : {{ $companyPhone }} &ndash; Instagram &amp; TikTok : @n7cateringbunardi
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
                 </td>
-                <td style="width: 42%; vertical-align: middle;">
+                <td style="width: 35%; vertical-align: middle; border: none; padding: 0;">
                     <div class="doc-title">SLIP GAJI</div>
                     <div class="doc-subtitle">Periode: {{ $payroll->nama_bulan }}</div>
                 </td>
