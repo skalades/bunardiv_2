@@ -181,7 +181,7 @@
                     <li class="c-notification-item">
                         <div class="c-dot {{ $stats['unpaidInvoicesCount'] > 0 ? 'red' : 'green' }}"></div>
                         <span>
-                            <a href="{{ url('/admin/tagihans') }}" style="color: inherit; text-decoration: none;">
+                            <a href="{{ url('/tagihans') }}" style="color: inherit; text-decoration: none;">
                                 <b>{{ $stats['unpaidInvoicesCount'] }}</b> invoice/pesanan belum lunas.
                             </a>
                         </span>
@@ -189,7 +189,7 @@
                     <li class="c-notification-item">
                         <div class="c-dot gold"></div>
                         <span>
-                            <a href="{{ url('/admin/kalender-acara') }}" style="color: inherit; text-decoration: none;">
+                            <a href="{{ url('/kalender') }}" style="color: inherit; text-decoration: none;">
                                 <b>{{ $this->today_orders->count() }}</b> jadwal hari ini.
                                 <span style="color: var(--accent-gold); font-size: 11px; margin-left: 4px;">(Lihat Kalender &rarr;)</span>
                             </a>

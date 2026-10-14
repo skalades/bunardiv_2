@@ -37,6 +37,22 @@ class KalenderAcaraTest extends TestCase
             ->assertSee('Kalender Jadwal Acara');
     }
 
+    public function test_kalender_acara_url_redirects_to_kalender(): void
+    {
+        $this->actingAs($this->admin)
+            ->get('/kalender-acara')
+            ->assertRedirect('/kalender');
+
+        $this->actingAs($this->admin)
+            ->get('/admin/kalender-acara')
+            ->assertRedirect('/kalender');
+
+        $this->actingAs($this->admin)
+            ->get('/admin/tagihans')
+            ->assertRedirect('/tagihans');
+    }
+
+
     public function test_livewire_kalender_component_renders_and_navigates_months(): void
     {
         Livewire::actingAs($this->admin)

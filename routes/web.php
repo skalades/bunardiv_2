@@ -10,3 +10,16 @@ Route::get('/work-orders/{workOrder}/spk', [PdfController::class, 'spk'])->name(
 Route::get('/work-orders/{workOrder}/surat-jalan', [PdfController::class, 'suratJalan'])->name('surat_jalan.download')->middleware(['auth']);
 Route::get('/payroll-items/{payrollItem}/slip', [PdfController::class, 'slipGaji'])->name('payroll.slip')->middleware(['auth']);
 Route::get('/laporan-keuangan/pdf', [PdfController::class, 'laporanKeuangan'])->name('laporan_keuangan.pdf')->middleware(['auth']);
+
+// Compatibility redirects
+Route::redirect('/kalender-acara', '/kalender');
+Route::redirect('/admin/kalender-acara', '/kalender');
+Route::redirect('/admin/kalender', '/kalender');
+Route::get('/admin/{any?}', function (?string $any = null) {
+    if (! $any) {
+        return redirect('/');
+    }
+
+    return redirect('/'.ltrim($any, '/'));
+})->where('any', '.*');
+
