@@ -706,7 +706,13 @@
                 @endif
             </td>
             <td style="vertical-align: middle; border: none;">
-                <div class="kop-brand-title">{{ $setting->company_name ?? 'IBU NARDI' }}</div>
+                @php
+                    $rawLapName = $setting->company_name ?? 'IBU NARDI';
+                    $lapTitle = (trim(strtoupper($rawLapName)) === 'N7 DECORATION & CATERING BU NARDI' || trim(strtoupper($rawLapName)) === 'IBU NARDI')
+                        ? 'IBU NARDI'
+                        : $rawLapName;
+                @endphp
+                <div class="kop-brand-title">{{ $lapTitle }}</div>
                 <div class="kop-tagline" style="font-size: 11px; font-weight: 700; color: #334155; text-transform: none; margin-top: 1px; margin-bottom: 2px;">Catering &amp; N7 Decoration</div>
                 <div class="kop-info">
                     Alamat : {{ $setting->company_address ?? 'Jl. Patrakomala No.7, Jayaraga, Tarogong Kidul, Garut' }}<br>

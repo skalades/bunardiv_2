@@ -1,8 +1,14 @@
 @php
     $kopSetting = $setting ?? \App\Models\Setting::getSettings();
     $kopLogoPath = $kopSetting->getLogoPath();
-    $kopCompanyName = $kopSetting->company_name ?: 'IBU NARDI';
-    $kopCompanySub = $subTitle ?? 'Catering & N7 Decoration';
+    $rawName = $kopSetting->company_name ?: 'IBU NARDI';
+    if (trim(strtoupper($rawName)) === 'N7 DECORATION & CATERING BU NARDI' || trim(strtoupper($rawName)) === 'IBU NARDI') {
+        $kopCompanyName = 'IBU NARDI';
+        $kopCompanySub = 'Catering & N7 Decoration';
+    } else {
+        $kopCompanyName = $rawName;
+        $kopCompanySub = $subTitle ?? 'Catering & N7 Decoration';
+    }
     $kopAddress = $kopSetting->company_address ?: 'Jl. Patrakomala No.7, Jayaraga, Tarogong Kidul, Garut';
     $kopPhone = $kopSetting->company_phone ?: '0852-8844-2884';
     $kopBorderColor = $dividerColor ?? '#1e293b';

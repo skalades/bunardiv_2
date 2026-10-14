@@ -170,7 +170,10 @@
     @php
         $setting = $setting ?? \App\Models\Setting::getSettings();
         $logoPath = $setting->getLogoPath();
-        $companyName = $setting->company_name ?: 'IBU NARDI';
+        $rawName = $setting->company_name ?: 'IBU NARDI';
+        $companyName = (trim(strtoupper($rawName)) === 'N7 DECORATION & CATERING BU NARDI' || trim(strtoupper($rawName)) === 'IBU NARDI')
+            ? 'IBU NARDI'
+            : $rawName;
         $companyAddress = $setting->company_address ?: 'Jl. Patrakomala No.7, Jayaraga, Tarogong Kidul, Garut';
         $companyPhone = $setting->company_phone ?: '0852-8844-2884';
         $companyEmail = $setting->company_email ?: 'operasional@n7bunardi.com';
