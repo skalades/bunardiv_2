@@ -71,6 +71,11 @@ class PayrollService
                     continue;
                 }
 
+                $attendanceHariIni = Attendance::where('user_id', $user->id)
+                    ->whereDate('tanggal', $date)
+                    ->first();
+                $dendaHariIni = (float) ($attendanceHariIni?->denda ?? 0);
+
                 $item = [
                     'payroll_id' => $payroll->id,
                     'user_id' => $user->id,
@@ -80,7 +85,7 @@ class PayrollService
                     'bonus' => 0,
                     'lembur' => 0,
                     'potongan_kasbon' => 0,
-                    'potongan_lain' => 0,
+                    'potongan_lain' => $dendaHariIni,
                     'status' => 'draft',
                 ];
 
@@ -111,7 +116,7 @@ class PayrollService
                         + ($profile->tunjangan_makan * $jumlahHari);
                 }
 
-                $item['total_bersih'] = max(0, $item['total_bruto']);
+                $item['total_bersih'] = max(0, $item['total_bruto'] - $item['potongan_kasbon'] - $item['potongan_lain']);
 
                 PayrollItem::create($item);
             }
@@ -211,9 +216,15 @@ class PayrollService
                         return min($loan->cicilan_per_bulan ?? 0, $loan->sisa_hutang);
                     });
 
+                // Hitung total denda keterlambatan/absensi pada bulan ini
+                $totalDenda = (float) Attendance::where('user_id', $user->id)
+                    ->whereDate('tanggal', '>=', $startDate->toDateString())
+                    ->whereDate('tanggal', '<=', $endDate->toDateString())
+                    ->sum('denda');
+
                 $item['potongan_kasbon'] = $totalKasbon;
-                $item['potongan_lain'] = 0;
-                $item['total_bersih'] = max(0, $item['total_bruto'] - $totalKasbon);
+                $item['potongan_lain'] = $totalDenda;
+                $item['total_bersih'] = max(0, $item['total_bruto'] - $totalKasbon - $totalDenda);
                 $item['status'] = 'draft';
 
                 PayrollItem::create($item);

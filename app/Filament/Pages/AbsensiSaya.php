@@ -102,11 +102,13 @@ class AbsensiSaya extends Page
         }
 
         try {
+            $nowTime = now()->format('H:i');
             Attendance::create([
                 'user_id' => $userId,
                 'tanggal' => $today,
                 'status' => $status,
-                'keterangan' => $keterangan ?: 'Self check-in harian pada '.now()->format('H:i').' WIB',
+                'jam_masuk' => $status === 'hadir' ? $nowTime : null,
+                'keterangan' => $keterangan ?: 'Self check-in harian pada '.$nowTime.' WIB',
                 'dicatat_oleh' => $userId,
             ]);
 
@@ -121,6 +123,48 @@ class AbsensiSaya extends Page
                 ->warning()
                 ->send();
         }
+    }
+
+    /**
+     * Action self-absen pulang harian kantor (khusus karyawan bulanan)
+     */
+    public function checkOutDaily(): void
+    {
+        $userId = auth()->id();
+        $today = now()->toDateString();
+
+        $existing = Attendance::where('user_id', $userId)
+            ->whereDate('tanggal', $today)
+            ->first();
+
+        if (! $existing || $existing->status !== 'hadir') {
+            Notification::make()
+                ->title('Anda belum melakukan absensi masuk hari ini.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        if ($existing->jam_pulang) {
+            Notification::make()
+                ->title('Anda sudah mencatat jam pulang hari ini ('.substr($existing->jam_pulang, 0, 5).' WIB).')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $now = now();
+        $existing->update([
+            'jam_pulang' => $now->format('H:i'),
+        ]);
+
+        Notification::make()
+            ->title('Absen Pulang Berhasil!')
+            ->body('Jam pulang Anda tercatat pada '.$now->format('H:i').' WIB.')
+            ->success()
+            ->send();
     }
 
     protected function getViewData(): array

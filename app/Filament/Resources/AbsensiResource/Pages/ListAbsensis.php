@@ -12,6 +12,8 @@ use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 
@@ -27,7 +29,7 @@ class ListAbsensis extends ListRecords
                 ->icon('heroicon-o-user-group')
                 ->color('warning')
                 ->modalHeading('Presensi Karyawan Secara Massal')
-                ->modalDescription('Pilih tanggal dan centang karyawan yang ingin dicatat absensinya secara sekaligus.')
+                ->modalDescription('Pilih tanggal, shift / jam kerja, dan centang karyawan yang ingin dicatat absensinya secara sekaligus.')
                 ->form([
                     DatePicker::make('tanggal')
                         ->label('Tanggal Presensi')
@@ -42,7 +44,52 @@ class ListAbsensis extends ListRecords
                             'alpha' => 'Alpha',
                         ])
                         ->default('hadir')
-                        ->required(),
+                        ->required()
+                        ->live(),
+                    Select::make('preset_shift')
+                        ->label('Pilihan Shift Jam Kerja')
+                        ->options([
+                            'custom' => 'Input Jam Manual (Custom)',
+                            'kantor' => 'Kantor Normal (08:00 - 17:00)',
+                            'shift_1' => 'Shift 1: Pagi (06:00 - 15:00)',
+                            'shift_2' => 'Shift 2: Siang (09:00 - 18:00)',
+                            'shift_3' => 'Shift 3: Sore (11:00 - 20:00)',
+                            'catering' => 'Crew Catering / Kitchen (06:00 - 16:00)',
+                            'decor' => 'Crew Decor (07:00 - 18:00)',
+                            'bangunan' => 'Tukang Bangunan (07:00 - 17:00)',
+                        ])
+                        ->default('kantor')
+                        ->live()
+                        ->afterStateUpdated(function ($state, $set) {
+                            $shifts = [
+                                'kantor' => ['masuk' => '08:00', 'pulang' => '17:00'],
+                                'shift_1' => ['masuk' => '06:00', 'pulang' => '15:00'],
+                                'shift_2' => ['masuk' => '09:00', 'pulang' => '18:00'],
+                                'shift_3' => ['masuk' => '11:00', 'pulang' => '20:00'],
+                                'catering' => ['masuk' => '06:00', 'pulang' => '16:00'],
+                                'decor' => ['masuk' => '07:00', 'pulang' => '18:00'],
+                                'bangunan' => ['masuk' => '07:00', 'pulang' => '17:00'],
+                            ];
+
+                            if (isset($shifts[$state])) {
+                                $set('jam_masuk', $shifts[$state]['masuk']);
+                                $set('jam_pulang', $shifts[$state]['pulang']);
+                                $set('denda', 0);
+                            }
+                        }),
+                    TimePicker::make('jam_masuk')
+                        ->label('Jam Masuk')
+                        ->default('08:00')
+                        ->seconds(false),
+                    TimePicker::make('jam_pulang')
+                        ->label('Jam Pulang')
+                        ->default('17:00')
+                        ->seconds(false),
+                    TextInput::make('denda')
+                        ->label('Denda Keterlambatan / Penyesuaian (Bisa diatur)')
+                        ->currencyIdr()
+                        ->default(0)
+                        ->helperText('Nominal denda per karyawan (Standar: Rp 5.000 / 30 menit telat). Default: Rp 0.'),
                     CheckboxList::make('user_ids')
                         ->label('Pilih Karyawan')
                         ->options(function () {
@@ -74,6 +121,9 @@ class ListAbsensis extends ListRecords
                     $status = $data['status'];
                     $keterangan = $data['keterangan'] ?? 'Presensi massal manual oleh Super Admin';
                     $adminId = auth()->id();
+                    $jamMasuk = $data['jam_masuk'] ?? null;
+                    $jamPulang = $data['jam_pulang'] ?? null;
+                    $denda = isset($data['denda']) ? (float) $data['denda'] : 0;
                     $count = 0;
 
                     foreach ($data['user_ids'] as $userId) {
@@ -84,6 +134,9 @@ class ListAbsensis extends ListRecords
                             ],
                             [
                                 'status' => $status,
+                                'jam_masuk' => $jamMasuk,
+                                'jam_pulang' => $jamPulang,
+                                'denda' => $denda,
                                 'keterangan' => $keterangan,
                                 'dicatat_oleh' => $adminId,
                             ]

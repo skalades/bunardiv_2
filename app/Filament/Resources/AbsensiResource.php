@@ -13,6 +13,8 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -72,15 +74,23 @@ class AbsensiResource extends Resource
     {
         return $schema
             ->components([
-                Section::make('Pencatatan Kehadiran')
-                    ->columns(2)
+                Section::make('Informasi Kehadiran Karyawan')
+                    ->description('Pilih karyawan, tanggal, dan status kehadiran.')
+                    ->columns(3)
                     ->schema([
                         Select::make('user_id')
-                            ->label('Karyawan (Khusus Bulanan)')
-                            ->options(
-                                User::whereHas('employeeProfile', fn ($q) => $q->where('status_aktif', true))
-                                    ->pluck('name', 'id')
-                            )
+                            ->label('Nama Karyawan')
+                            ->options(function () {
+                                return User::whereHas('employeeProfile', fn ($q) => $q->where('status_aktif', true))
+                                    ->with('employeeProfile')
+                                    ->get()
+                                    ->mapWithKeys(function ($u) {
+                                        $jabatan = $u->employeeProfile?->jabatan ?? 'Staf';
+                                        $tipe = ucfirst($u->employeeProfile?->tipe ?? 'harian');
+
+                                        return [$u->id => "{$u->name} ({$jabatan} - {$tipe})"];
+                                    });
+                            })
                             ->searchable()
                             ->preload()
                             ->required(),
@@ -97,10 +107,84 @@ class AbsensiResource extends Resource
                                 'alpha' => 'Alpha',
                             ])
                             ->default('hadir')
-                            ->required(),
+                            ->required()
+                            ->live(),
+                    ]),
+
+                Section::make('Jam Kerja & Pengaturan Denda')
+                    ->description('Pilih preset shift atau input jam masuk dan pulang secara manual. Denda dapat diatur dan disesuaikan.')
+                    ->columns(2)
+                    ->schema([
+                        Select::make('preset_shift')
+                            ->label('Pilihan Shift Cepat')
+                            ->options([
+                                'custom' => 'Input Manual (Custom)',
+                                'kantor' => 'Kantor Normal (08:00 - 17:00)',
+                                'shift_1' => 'Shift 1: Pagi (06:00 - 15:00)',
+                                'shift_2' => 'Shift 2: Siang (09:00 - 18:00)',
+                                'shift_3' => 'Shift 3: Sore (11:00 - 20:00)',
+                                'catering' => 'Crew Catering / Kitchen (06:00 - 16:00)',
+                                'decor' => 'Crew Decor (07:00 - 18:00)',
+                                'bangunan' => 'Tukang Bangunan (07:00 - 17:00)',
+                            ])
+                            ->default('kantor')
+                            ->dehydrated(false)
+                            ->live()
+                            ->afterStateUpdated(function ($state, $set, $get) {
+                                $shifts = [
+                                    'kantor' => ['masuk' => '08:00', 'pulang' => '17:00'],
+                                    'shift_1' => ['masuk' => '06:00', 'pulang' => '15:00'],
+                                    'shift_2' => ['masuk' => '09:00', 'pulang' => '18:00'],
+                                    'shift_3' => ['masuk' => '11:00', 'pulang' => '20:00'],
+                                    'catering' => ['masuk' => '06:00', 'pulang' => '16:00'],
+                                    'decor' => ['masuk' => '07:00', 'pulang' => '18:00'],
+                                    'bangunan' => ['masuk' => '07:00', 'pulang' => '17:00'],
+                                ];
+
+                                if (isset($shifts[$state])) {
+                                    $set('jam_masuk', $shifts[$state]['masuk']);
+                                    $set('jam_pulang', $shifts[$state]['pulang']);
+                                    $set('denda', 0);
+                                }
+                            })
+                            ->columnSpanFull(),
+
+                        TimePicker::make('jam_masuk')
+                            ->label('Jam Masuk')
+                            ->default('08:00')
+                            ->seconds(false)
+                            ->live(debounce: 500)
+                            ->afterStateUpdated(function ($state, $set, $get) {
+                                $preset = $get('preset_shift') ?? 'kantor';
+                                $shiftStarts = [
+                                    'kantor' => '08:00',
+                                    'shift_1' => '06:00',
+                                    'shift_2' => '09:00',
+                                    'shift_3' => '11:00',
+                                    'catering' => '06:00',
+                                    'decor' => '07:00',
+                                    'bangunan' => '07:00',
+                                ];
+                                $scheduledStart = $shiftStarts[$preset] ?? '08:00';
+                                $calculatedDenda = Attendance::hitungDendaTelat($state, $scheduledStart, 5000);
+                                $set('denda', $calculatedDenda);
+                            }),
+
+                        TimePicker::make('jam_pulang')
+                            ->label('Jam Pulang')
+                            ->default('17:00')
+                            ->seconds(false),
+
+                        TextInput::make('denda')
+                            ->label('Denda Keterlambatan / Penalti')
+                            ->currencyIdr()
+                            ->default(0)
+                            ->helperText('Denda dapat diatur atau disesuaikan secara manual oleh admin. Rekomendasi otomatis: Rp 5.000 per 30 menit keterlambatan.')
+                            ->columnSpanFull(),
+
                         Textarea::make('keterangan')
                             ->label('Keterangan / Alasan')
-                            ->placeholder('Opsional (alasan izin, surat dokter, dll)')
+                            ->placeholder('Opsional (alasan izin, dispensasi, catatan lembur/terlambat, dll)')
                             ->columnSpanFull(),
                     ]),
             ]);
@@ -134,6 +218,18 @@ class AbsensiResource extends Resource
                         default => 'gray',
                     })
                     ->formatStateUsing(fn ($state) => ucfirst($state)),
+                TextColumn::make('jam_kerja')
+                    ->label('Jam Kerja (Masuk - Pulang)')
+                    ->getStateUsing(fn (Attendance $record) => $record->jam_kerja)
+                    ->badge()
+                    ->color('gray')
+                    ->placeholder('-'),
+                TextColumn::make('denda')
+                    ->label('Denda')
+                    ->money('idr', decimalPlaces: 0)
+                    ->color(fn ($state) => (float) $state > 0 ? 'danger' : 'gray')
+                    ->weight(fn ($state) => (float) $state > 0 ? 'bold' : 'normal')
+                    ->sortable(),
                 TextColumn::make('keterangan')
                     ->label('Keterangan')
                     ->limit(40)
@@ -158,6 +254,9 @@ class AbsensiResource extends Resource
                 Filter::make('bulan_ini')
                     ->label('Bulan Ini')
                     ->query(fn (Builder $query) => $query->whereMonth('tanggal', now()->month)->whereYear('tanggal', now()->year)),
+                Filter::make('ada_denda')
+                    ->label('Memiliki Denda')
+                    ->query(fn (Builder $query) => $query->where('denda', '>', 0)),
             ])
             ->recordActions([
                 EditAction::make(),

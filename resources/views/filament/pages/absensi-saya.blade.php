@@ -74,10 +74,32 @@
                     </div>
 
                     @if($todayAttendance)
-                        <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(46, 204, 113, 0.15); border: 1px solid rgba(46, 204, 113, 0.3); color: #2ecc71; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px;">
-                            <x-heroicon-o-check-circle style="width: 18px; height: 18px;" />
-                            Sudah Absen: {{ ucfirst($todayAttendance->status) }}
-                            <span style="font-size: 11px; color: #8b92a4;">({{ $todayAttendance->created_at->format('H:i') }} WIB)</span>
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(46, 204, 113, 0.15); border: 1px solid rgba(46, 204, 113, 0.3); color: #2ecc71; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px;">
+                                <x-heroicon-o-check-circle style="width: 18px; height: 18px;" />
+                                Status: {{ ucfirst($todayAttendance->status) }}
+                                @if($todayAttendance->jam_masuk)
+                                    <span style="font-size: 12px; color: #cbd5e1; margin-left: 4px;">• Masuk: {{ substr($todayAttendance->jam_masuk, 0, 5) }}</span>
+                                @endif
+                                @if($todayAttendance->jam_pulang)
+                                    <span style="font-size: 12px; color: #cbd5e1; margin-left: 2px;">• Pulang: {{ substr($todayAttendance->jam_pulang, 0, 5) }}</span>
+                                @endif
+                                @if($todayAttendance->denda > 0)
+                                    <span style="font-size: 12px; color: #e74c3c; font-weight: 700; margin-left: 4px;">(Denda: Rp {{ number_format($todayAttendance->denda, 0, ',', '.') }})</span>
+                                @endif
+                            </div>
+
+                            @if($todayAttendance->status === 'hadir' && ! $todayAttendance->jam_pulang)
+                                <button
+                                    type="button"
+                                    wire:click="checkOutDaily"
+                                    wire:loading.attr="disabled"
+                                    style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #e67e22, #d35400); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; box-shadow: 0 2px 8px rgba(230, 126, 34, 0.3);"
+                                >
+                                    <x-heroicon-o-arrow-right-on-rectangle style="width: 16px; height: 16px;" />
+                                    Absen Pulang Sekarang
+                                </button>
+                            @endif
                         </div>
                     @endif
                 </div>

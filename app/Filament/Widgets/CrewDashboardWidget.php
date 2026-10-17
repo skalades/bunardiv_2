@@ -67,11 +67,13 @@ class CrewDashboardWidget extends Widget
         }
 
         try {
+            $nowTime = now()->format('H:i');
             Attendance::create([
                 'user_id' => $userId,
                 'tanggal' => $today,
                 'status' => $status,
-                'keterangan' => 'Self check-in harian dashboard pada '.now()->format('H:i').' WIB',
+                'jam_masuk' => $status === 'hadir' ? $nowTime : null,
+                'keterangan' => 'Self check-in harian dashboard pada '.$nowTime.' WIB',
                 'dicatat_oleh' => $userId,
             ]);
 
