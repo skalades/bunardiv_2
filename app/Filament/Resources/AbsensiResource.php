@@ -179,6 +179,7 @@ class AbsensiResource extends Resource
                             ->label('Denda Keterlambatan / Penalti')
                             ->currencyIdr()
                             ->default(0)
+                            ->dehydrateStateUsing(fn ($state) => blank($state) ? 0 : (float) $state)
                             ->helperText('Denda dapat diatur atau disesuaikan secara manual oleh admin. Rekomendasi otomatis: Rp 5.000 per 30 menit keterlambatan.')
                             ->columnSpanFull(),
 

@@ -227,4 +227,58 @@ class ManualAttendanceWithJamKerjaAndDendaTest extends TestCase
         $att->refresh();
         $this->assertNotNull($att->jam_pulang);
     }
+
+    public function test_admin_can_create_attendance_with_null_or_empty_denda_without_exception(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $employee = User::factory()->create(['name' => 'Karyawan Tanpa Denda']);
+        EmployeeProfile::create([
+            'user_id' => $employee->id,
+            'jabatan' => 'Staff Kantor',
+            'tipe' => 'bulanan',
+            'status_aktif' => true,
+        ]);
+
+        $this->actingAs($admin);
+
+        // Simulasi form disubmit dengan denda kosong / null seperti pada gambar error
+        Livewire::test(CreateAbsensi::class)
+            ->fillForm([
+                'user_id' => $employee->id,
+                'tanggal' => '2026-10-19',
+                'status' => 'hadir',
+                'jam_masuk' => '07:03',
+                'jam_pulang' => '18:00',
+                'denda' => null,
+                'keterangan' => null,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $att = Attendance::where('user_id', $employee->id)->whereDate('tanggal', '2026-10-19')->first();
+        $this->assertNotNull($att);
+        $this->assertEquals(0, (float) $att->denda);
+        $this->assertEquals('07:03', substr($att->jam_masuk, 0, 5));
+        $this->assertEquals('18:00', substr($att->jam_pulang, 0, 5));
+    }
+
+    public function test_attendance_model_mutator_defaults_null_denda_to_zero(): void
+    {
+        $user = User::factory()->create();
+
+        $att = Attendance::create([
+            'user_id' => $user->id,
+            'tanggal' => '2026-10-20',
+            'status' => 'hadir',
+            'jam_masuk' => '08:00',
+            'jam_pulang' => '17:00',
+            'denda' => null, // explicitly null
+        ]);
+
+        $this->assertEquals(0, (float) $att->denda);
+
+        $att->update(['denda' => '']);
+        $this->assertEquals(0, (float) $att->denda);
+    }
 }
+

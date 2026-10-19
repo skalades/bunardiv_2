@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::table('attendances', function (Blueprint $table) {
             $table->time('jam_masuk')->nullable()->after('status');
             $table->time('jam_pulang')->nullable()->after('jam_masuk');
-            $table->decimal('denda', 15, 2)->default(0)->after('jam_pulang');
+            $table->decimal('denda', 15, 2)->default(0)->nullable()->after('jam_pulang');
         });
     }
 

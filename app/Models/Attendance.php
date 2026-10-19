@@ -29,6 +29,21 @@ class Attendance extends Model
         $this->attributes['tanggal'] = $value ? Carbon::parse($value)->toDateString() : null;
     }
 
+    public function setDendaAttribute($value): void
+    {
+        $this->attributes['denda'] = blank($value) ? 0 : (float) $value;
+    }
+
+    public function setJamMasukAttribute($value): void
+    {
+        $this->attributes['jam_masuk'] = blank($value) ? null : $value;
+    }
+
+    public function setJamPulangAttribute($value): void
+    {
+        $this->attributes['jam_pulang'] = blank($value) ? null : $value;
+    }
+
     public function getJamKerjaAttribute(): ?string
     {
         if (! $this->jam_masuk && ! $this->jam_pulang) {
